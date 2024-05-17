@@ -264,7 +264,7 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
 # Outputs
 # ll_k - maximized likelihood
 # x - estimated parameter vector 
-def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers):
+def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12):
     # Testing Tool: A index of parameters to estimate while holding others constant
     # This can help identification. range(0,len(x)) will estimate all parameters 
     test_index = theta.beta_x_ind
@@ -301,7 +301,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers):
     backward_tracker = 0 
 
     # Iterate while error exceeds tolerance
-    while err>1e-6:
+    while err>gtol:
         # Update best so far
         if ll_k>ll_best:
             ll_best = np.copy(ll_k)
@@ -356,7 +356,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers):
                 attempt_gradient_step = 1
                 alpha = 1e-3/np.max(np.abs(f_new[test_index]))
                 p_k = f_k[test_index]
-            elif (np.max(s_k)<1e-5) & (attempt_gradient_step==1):
+            elif (np.max(s_k)<xtol) & (attempt_gradient_step==1):
                 print("#### No Better Point Found")
                 return ll_best, x_best
 
@@ -405,7 +405,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers):
         print("#### Iteration",itr, "Evaluated at ",x)
         print("#### Iteration",itr, "Likelihood Value", ll_k, "Gradient Size", err)
         print("#### Iteration",itr,"Step Size (max, min):",np.max(final_step),np.min(final_step))
-        if (np.max(final_step)<1e-6) & (ll_k>=ll_best):
+        if (np.max(final_step)<xtol) & (ll_k>=ll_best):
             print("#### Tolerance on Parameter Updated Magnitude Reached ####")
             break
 

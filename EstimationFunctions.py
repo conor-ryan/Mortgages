@@ -750,3 +750,30 @@ def py_optim(x,theta,cdf,mdf,mbsdf,model="base"):
   
     return res
 
+def predicted_elasticity(x,theta,cdf,mdf,mbsdf,model="base"):
+    # Print candidate parameter guess 
+    # print("Parameters:", x)
+    # Set parameters in the parameter object
+    theta.set_demand(x)
+    # Initialize Aggregate Share Variables
+    # pred_N = np.zeros(len(theta.out_share))
+    # pred_N_out = np.zeros(len(theta.out_share))
+    # mkt_Obs = np.zeros(len(theta.out_share))
+    # q0_mkt = np.zeros(len(theta.out_share))
+
+    alpha_list = np.zeros(cdf.shape[0])
+    elas = np.zeros(cdf.shape[0])
+    eq_flag = np.zeros(cdf.shape[0])
+    # Iterate over all consumers
+    for i in range(cdf.shape[0]):
+        # Subset data for consumer i
+        dat, mbs = consumer_subset(i,theta,cdf,mdf,mbsdf)
+        # Evaluate likelihood for consumer i 
+        ll_i,q0_i,a_i,itr = consumer_likelihood_eval(theta,dat,mbs,model=model)
+        r, itr,flag= EquilibriumFunctions.solve_eq_optim(a_i,dat,theta,mbs)
+        q = ModelFunctions.market_shares(r,a_i,dat,theta)
+        alpha_list[i] = a_i
+        elas[i] = a_i*dat.r_obs*(1-q[dat.lender_obs])
+        eq_flag[i] = flag
+    
+    return alpha_list,elas,eq_flag

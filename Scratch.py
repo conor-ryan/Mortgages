@@ -117,7 +117,9 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5.0])#, # Beta_x
 # start = np.array([  3.43829288  , 3.12770199 ,  2.84832343 ,  2.72349657,   2.75037427,
 # 120.08252081])
 
-f_val, start = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,4)
+f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,4,gtol=1e-6,xtol=1e-12)
+
+
 fval, res  = parallel_optim(start,theta,consumer_data,market_data,mbs_data,4)
 
 
@@ -133,12 +135,12 @@ fval, res  = parallel_optim(start,theta,consumer_data,market_data,mbs_data,4)
 # test = np.array([  3.7456483 ,   3.44958674 ,  3.14584182,   3.02402567,   3.04680003,
 #  110.11616341])
 
-test = np.array([  5.57371928,   3.78605371,   2.70256459,   2.56466092 ,  3.21529397, 127.18751441])
+
 ll1, grad1 = evaluate_likelihood_gradient(res,theta,consumer_data,market_data,mbs_data)
 print(ll1)
 
 test2 = np.copy(res)
-test2[3] = res[3] - 1e-3*grad1[3]
+test2[:] = res[:] + 1e-2*grad1[0:len(res)]
 ll2= evaluate_likelihood(test2,theta,consumer_data,market_data,mbs_data)
 print(ll1)
 print(ll2)
@@ -185,7 +187,7 @@ ll2, grad2,hess2 = evaluate_likelihood_hessian(pre_start,theta,consumer_data,mar
 
 
 
-
+a_vec, e_vec,flag_vec = predicted_elasticity(res,theta,consumer_data,market_data,mbs_data)
 
 
 evaluate_likelihood_gradient(pre_start,theta,consumer_data,market_data,mbs_data)
@@ -456,9 +458,9 @@ ll0 = evaluate_likelihood(test,theta,consumer_data,market_data,mbs_data)
 # np.log(q3[dat.lender_obs])
 # 193, 247, 385, 524, 541
 error = np.zeros((consumer_data.shape[0],len(true_parameters)))
-# for i in range(consumer_data.shape[0]):
-i = 385
-theta.set_demand(true_parameters)
+for i in range(consumer_data.shape[0]):
+# i = 385
+theta.set_demand(res)
 dat,mbs = consumer_subset(i,theta,consumer_data,market_data,mbs_data)
 # r_min = min_rate(dat,theta,mbs)
 # prof, dprof = dSaleProfit_dr(np.repeat(dat.r_obs,len(r_min)),dat,theta,mbs)
@@ -481,7 +483,15 @@ for i in range(len(alpha_seq)):
         q =  market_shares(r,alpha_seq[i],d,theta)
         t1[i] = 1-sum(q)
 
+theta.set_demand(res)
 ll_i, dll_i, q0, dq0, alpha, da, itr = consumer_likelihood_eval_gradient(theta,d,m)
+
+
+theta.set_demand(res + dll_i[0:len(res)]*1e-3)
+ll_2, q0, alpha, itr = consumer_likelihood_eval(theta,d,m)
+print(ll_2-ll_i)
+
+
 # ll_i - np.log(q[dat.lender_obs])
 
 dll_i = dll_i[0:6]

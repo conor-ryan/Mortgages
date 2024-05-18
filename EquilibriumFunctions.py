@@ -410,6 +410,9 @@ def solve_eq_r_optim(r0,j,d,theta,m,model="base"):
     itr_max = 50
     alpha, r, itr = solve_eq_r(r0,j,d,theta,m,itr_max=itr_max,model=model)
     if itr<itr_max:
+        if alpha < theta.alpha_min:
+            alpha = theta.alpha_min
+            r = ModelFunctions.min_rate(d,theta,m,model=model) - 1/theta.alpha_min
         return alpha, r, itr, True
     print("Using Optim",d.i)
     # Define zero profit interest rate which will help bound feasible equi. interest rates
@@ -470,6 +473,11 @@ def solve_eq_r_optim(r0,j,d,theta,m,model="base"):
     alpha = res.x[j]
     r = np.copy(res.x)
     r[j] = r0
+
+
+    if alpha < theta.alpha_min:
+        alpha = theta.alpha_min
+        r = ModelFunctions.min_rate(d,theta,m,model=model) - 1/theta.alpha_min
 
     return alpha,r, res.nfev, res.success
 

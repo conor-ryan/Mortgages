@@ -111,7 +111,10 @@ def deriv_test_likelihood(vec,theta,cdf,mdf,mbsdf):
         vec_new[i] = vec[i] + eps
         ll2 = EstimationFunctions.evaluate_likelihood(vec_new,theta,cdf,mdf,mbsdf)
 
-        der = (ll2-ll1)/(eps)
+        vec_new[i] = vec[i] - eps
+        ll3 = EstimationFunctions.evaluate_likelihood(vec_new,theta,cdf,mdf,mbsdf)
+
+        der = (ll2-ll3)/(2*eps)
         print(der)
         grad[i] = der
         
@@ -247,16 +250,37 @@ def deriv2_test_rate_share(r,alpha,d,theta,m):
 
 def deriv_test_rate(r,alpha,d,theta,m):
     eps = 1e-6
-    f0 = expected_foc(r,alpha,d,theta,m)
+    x,y,f0 = d_foc(r,alpha,d,theta,m,model="hold")
     D = np.zeros((len(r), len(f0)))
     for i in range(len(r)):
         r_test = np.copy(r)
         r_test[i] = r[i]+eps
-        f1 = expected_foc(r_test,alpha,d,theta,m)
-        der = (f1-f0)/(eps)
+        x,y,f1 = d_foc(r_test,alpha,d,theta,m)
+
+        r_test = np.copy(r)
+        r_test[i] = r[i]-eps
+        x,y,f2 = d_foc(r_test,alpha,d,theta,m)
+
+        der = (f1-f2)/(2*eps)
         D[i,:] = der
     return D
 
+def deriv_test_rate_share(r,alpha,d,theta,m):
+    eps = 1e-6
+    f0 = market_shares(r,alpha,d,theta)
+    D = np.zeros((len(r), len(f0)))
+    for i in range(len(r)):
+        r_test = np.copy(r)
+        r_test[i] = r[i]+eps
+        f1 = market_shares(r_test,alpha,d,theta)
+
+        r_test = np.copy(r)
+        r_test[i] = r[i]-eps
+        f2 = market_shares(r_test,alpha,d,theta)
+
+        der = (f1-f2)/(2*eps)
+        D[i,:] = der
+    return D
 
 def deriv_test_beta_x(r,alpha,d,theta,m):
     eps = 1e-6

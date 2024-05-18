@@ -37,6 +37,21 @@ def d_foc(r,alpha,d,theta,m,model="base"):
     q_mat = np.tile(q,(len(q),1))
     q_mat_t = np.transpose(q_mat)
 
+    # ## dqdr
+    # q_mat = np.tile(q,(len(q),1))
+    # q_mat_t = np.transpose(q_mat)
+    # dqdr = -alpha*q_mat*q_mat_t
+    # np.fill_diagonal(dqdr,alpha*q*(1-q))
+
+    # dFOC_dr = np.zeros((len(q),len(q)))
+    # for i in range(len(q)):
+    #     for j in range(len(q)):
+    #         if i==j:
+    #             dFOC_dr[i,j] = ((dpi_dr[j])/(alpha*(1-q[j]))**2)*(alpha*dqdr[i,j]) + dpi_dr[j] + d2pi_dr2[j]/(alpha*(1-q[j]))
+    #         else:
+    #             dFOC_dr[i,j] = ((dpi_dr[j])/(alpha*(1-q[j]))**2)*(alpha*dqdr[i,j])
+
+
     ## Derivative of FOC_j w.r.t. r_k - Columns: FOC_j, Rows: r_k (der ) 
     infra_mat = np.tile((dpi_dr),(len(q),1))
     dFOC_dr = -(infra_mat/(1-q_mat)**2)*(q_mat*q_mat_t)
@@ -261,6 +276,11 @@ def share_parameter_second_derivatives(r,alpha,d,theta,m,model="base"):
 
         d2endo_dtheta2[:,:,k] = -np.dot(np.linalg.inv(df_dendo),(d2f_dtheta2[:,:,k] + A + A_t + B))
 
+
+    if alpha<=theta.alpha_min:
+        dendo_dtheta = np.zeros(dendo_dtheta.shape)
+        d2endo_dtheta2 = np.zeros(d2endo_dtheta2.shape)
+
     q, dqdr, d2qdr2, dqdalpha,d2qdalpha2,d2qdrdalpha, dqdbeta_x, d2qdbeta_x,d2qdbetadr, d2qdbetadalpha = share_partial_deriv(r,alpha,d,theta,m)
 
     
@@ -335,6 +355,9 @@ def share_parameter_derivatives(r,alpha,d,theta,m,model="base"):
     ## Compute implicit derivatives of non-observed rates and alpha
     df_dtheta = np.transpose(np.concatenate((df_db,df_dg),axis=0))
     dendo_dtheta = -np.transpose(np.dot(np.linalg.inv(df_dendo),df_dtheta))
+
+    if alpha<=theta.alpha_min:
+        dendo_dtheta = np.zeros(dendo_dtheta.shape)
 
     # # Market Shares
     # q =  market_shares(r,alpha,d,theta)

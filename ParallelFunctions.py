@@ -297,7 +297,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
     B_best = np.copy(B_k)
     bfgs_mem_best = bfgs_mem
     # Allow small backward movement, but only occasionally
-    allowance = 1.0000 
+    allowance = 1.01
     backward_tracker = 0 
 
     # Iterate while error exceeds tolerance
@@ -311,8 +311,8 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
             backward_tracker +=1
 
         # If we have been behind the best for long, use a more strict search
-        if backward_tracker>4:
-            allowance = 1.0
+        if backward_tracker>1:
+            allowance = 1.00
             # Return to values at best evaluation
             ll_k = np.copy(ll_best)
             x = np.copy(x_best)
@@ -321,7 +321,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
             bfgs_mem = bfgs_mem_best
             print("Stalled Progress. Previous best:",ll_k,"Return to best guess at:", x)
         else:
-            allowance = 1.0000
+            allowance = 1.01
 
 
         # Compute newton step
@@ -349,16 +349,23 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
             alpha = alpha/10 # Shrink the step size
             print("Line Search Step Size:",attempt_gradient_step,alpha) # Print step size for search
             s_k = alpha*p_k # Compute new step size
+            print(alpha,p_k,s_k)
             x_new[test_index] = x[test_index] + s_k # Update new candidate parameter vector
 
             ll_new = evaluate_likelihood_parallel(x_new,theta,clist,num_workers) # Check new value of the likelihood function
-            if (alpha<1e-4) & (attempt_gradient_step==0):
+            if (alpha<1e-3) & (attempt_gradient_step==0):
                 attempt_gradient_step = 1
-                alpha = 1e-3/np.max(np.abs(f_new[test_index]))
-                p_k = f_k[test_index]
-            elif (np.max(s_k)<xtol) & (attempt_gradient_step==1):
+                # alpha = 1e-3/np.max(np.abs(f_new[test_index]))
+                # p_k = f_k[test_index]
+                print("#### Begin Gradient Ascent")
+                ll_new,x_new = estimate_GA_parallel(x,theta,clist,num_workers,itr_max=5)
+            elif (attempt_gradient_step==1):
                 print("#### No Better Point Found")
                 return ll_best, x_best
+            # elif (np.max(np.abs(s_k))<xtol) & (attempt_gradient_step==1):
+            #     print("#### No Better Point Found")
+            #     print(xtol)
+            #     return ll_best, x_best
 
         # # Line Search for a larger step if this is a good direction
         # if (line_search== 0) & (ll_new>ll_best):
@@ -412,6 +419,75 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
     # Print completion and output likelihood and estimated parameter vector
     print("Completed with Error", err)
     return ll_k, x
+
+def estimate_GA_parallel(x,theta,clist,num_workers,tol=1e-3,itr_max=50):
+    # Testing Tool: A index of parameters to estimate while holding others constant
+    # This can help identification. range(0,len(x)) will estimate all parameters 
+    test_index = theta.beta_x_ind
+    # Set candidate vector in parameter object
+    theta.set_demand(x)
+
+    # Initialize "new" candidate parameter vector
+    x_test = np.copy(x)
+
+
+    # Initial evaluation of likelihood (ll_k) and gradient (g_k)
+    ll_k, g_k = evaluate_likelihood_gradient_parallel(x,theta,clist,num_workers)
+    
+    #Initial step size
+    alpha = 1e-3/np.max(np.abs(g_k[test_index]))
+
+    # Initial evaluation of error and iteration count
+    err = 1000
+    itr = 0
+    # Iterate until error becomes small or a small, maximum iteration count 
+    while (err>tol) & (itr<itr_max):
+        # Asceding step is the step size times the gradient
+        s_k = alpha*g_k[test_index]
+        # Update candidate new parameter vector
+        x_test[test_index] = x[test_index] + s_k
+
+
+        # Evaluation of likelihood and gradient at new candidate vector
+        ll_test, g_test = evaluate_likelihood_gradient_parallel(x_test,theta,clist,num_workers)
+        
+        # Theoretically, a small enough step should always increase the likelihood
+        # If likelihood is lower at a given step, shrink until it is an ascending step
+        while ll_test<ll_k:
+
+            alpha = alpha/10 # Shrink step size
+            s_k = alpha*g_k[test_index] # New gradient ascent step
+            x_test[test_index] = x[test_index] + s_k # Recompute a new candidate parameter vector
+
+            # Re-evaluate likelihood and gradient
+            ll_test,g_test = evaluate_likelihood_gradient_parallel(x_test,theta,clist,num_workers)
+            if np.max(np.abs(s_k))<1e-15:
+                print("GA: stalled")
+                return ll_k,x
+
+        # Update parameter vector after successful step
+        x = np.copy(x_test)
+        theta.set_demand(x)  
+
+        # Update step size based on the change in the step size and gradient
+        y_k = g_test[test_index] - g_k[test_index]
+        # This is a very simple, quasi-newton approximation 
+        alpha = np.abs(np.dot(s_k,s_k)/np.dot(s_k,y_k))
+
+        # Update gradient and likelihood function
+        g_k = np.copy(g_test)
+        ll_k = np.copy(ll_test)
+        
+        # Compute the sum squared error of the likelihood gradient
+        err = np.mean(np.sqrt(g_k[test_index]**2))
+        # Update iteration count and print error value
+        itr+=1 
+        print("GA Iteration:",itr, ", Likelihood:", ll_k,", Gradient Size:", err)
+   
+    # Print completion and output likelihood and estimated parameter vector
+    # print("Completed with Error", err)
+    return ll_k, x
+
 
 
 def parallel_optim(x,theta,cdf,mdf,mbsdf,num_workers):

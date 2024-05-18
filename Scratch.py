@@ -101,9 +101,9 @@ theta = Parameters(consumer_data,
                    share_data["3"],share_data["4"])
 
 cost_true = np.array([0,0,0.000,#Gamma_WH
-                      0.2,0.0,0,0,0,0.00,0,0.00])
-theta.set_cost(cost_true)
-true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5.0])#, # Beta_x
+                      0.4,0.0,0,0,0,0.00,0,0.00])
+theta.set_cost(cost_res.x)
+true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,-30])#, # Beta_x
                 #    0,0,0, #Gamma_WH
                 #    0.32,0]) # Gamma_ZH
 
@@ -114,10 +114,16 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5.0])#, # Beta_x
 # theta.out_share
 # theta.out_share = np.array([0.5,0.5])
 # start = np.array([  5.57371928,   3.78605371,   2.70256459,   2.56466092 ,  3.21529397, 127.18751441])
-# start = np.array([  3.43829288  , 3.12770199 ,  2.84832343 ,  2.72349657,   2.75037427,
-# 120.08252081])
+res = np.array([ 15.20654451 , 15.02895159,  14.32205033 ,14.69502289 , 14.1723178,
+ -91.12348254])
+# start = np.array([  9.44449934,   9.10344673,   9.15257351,   8.80094886,
+#          8.59485071, -36.19692372])
+f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,4,gtol=1e-6,xtol=1e-15)
 
-f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,4,gtol=1e-6,xtol=1e-12)
+
+a_vec, e_vec,flag_vec = predicted_elasticity(res,theta,consumer_data,market_data,mbs_data)
+
+
 
 
 fval, res  = parallel_optim(start,theta,consumer_data,market_data,mbs_data,4)
@@ -140,7 +146,7 @@ ll1, grad1 = evaluate_likelihood_gradient(res,theta,consumer_data,market_data,mb
 print(ll1)
 
 test2 = np.copy(res)
-test2[:] = res[:] + 1e-2*grad1[0:len(res)]
+test2[:] = res[:] + 1e-3*grad1[0:len(res)]
 ll2= evaluate_likelihood(test2,theta,consumer_data,market_data,mbs_data)
 print(ll1)
 print(ll2)
@@ -186,8 +192,6 @@ ll2, grad2,hess2 = evaluate_likelihood_hessian(pre_start,theta,consumer_data,mar
 # opt_res2 = py_optim2(pre_start,theta,consumer_data,market_data,mbs_data)
 
 
-
-a_vec, e_vec,flag_vec = predicted_elasticity(res,theta,consumer_data,market_data,mbs_data)
 
 
 evaluate_likelihood_gradient(pre_start,theta,consumer_data,market_data,mbs_data)
@@ -350,12 +354,12 @@ ll5, grad5,hess5 = evaluate_likelihood_hessian_parallel(x,theta,clist,3)
 
 
 ## Likelihood Derivatives
-ll0 = evaluate_likelihood(true_parameters,theta,consumer_data,market_data,mbs_data)
-ll1, grad1 = evaluate_likelihood_gradient(true_parameters,theta,consumer_data,market_data,mbs_data)
+ll0 = evaluate_likelihood(res,theta,consumer_data,market_data,mbs_data)
+ll1, grad1 = evaluate_likelihood_gradient(res,theta,consumer_data,market_data,mbs_data)
 print(grad1)
-ll2, grad2,hess2 = evaluate_likelihood_hessian(start_parameters,theta,consumer_data,market_data,mbs_data)
+ll2, grad2,hess2 = evaluate_likelihood_hessian(res,theta,consumer_data,market_data,mbs_data)
 print(grad2)
-t1 = deriv_test_likelihood(true_parameters,theta,consumer_data,market_data,mbs_data)
+t1 = deriv_test_likelihood(res,theta,consumer_data,market_data,mbs_data)
 t2 = num_hessian_likelihood(start_parameters,theta,consumer_data,market_data,mbs_data)
 
 print(np.max(np.abs((grad1-t1)/t1)))
@@ -458,8 +462,10 @@ ll0 = evaluate_likelihood(test,theta,consumer_data,market_data,mbs_data)
 # np.log(q3[dat.lender_obs])
 # 193, 247, 385, 524, 541
 error = np.zeros((consumer_data.shape[0],len(true_parameters)))
-for i in range(consumer_data.shape[0]):
-# i = 385
+# for i in range(consumer_data.shape[0]):
+i = 27
+# test = np.copy(res)
+# test[0] = test[0] + 1e-6
 theta.set_demand(res)
 dat,mbs = consumer_subset(i,theta,consumer_data,market_data,mbs_data)
 # r_min = min_rate(dat,theta,mbs)
@@ -471,31 +477,39 @@ r0 = dat.r_obs
 j = dat.lender_obs
 d = dat
 m = mbs
-
+r_test = min_rate(d,theta,m) + 1/150
 alpha, r, itr, f = solve_eq_r_optim(r0,j,d,theta,m)
 q =  market_shares(r,alpha,d,theta)
 print(alpha,r,1-sum(q))
+print(consumer_likelihood_eval(theta,d,m))
 
-alpha_seq = np.linspace(-126,-127,10)
-t1 = np.zeros(len(alpha_seq))
-for i in range(len(alpha_seq)):
-        r, itr = solve_eq(alpha_seq[i],d,theta,m)
-        q =  market_shares(r,alpha_seq[i],d,theta)
-        t1[i] = 1-sum(q)
+r2, itr2 = solve_eq(-150,d,theta,m)
+alpha, r, itr, f = solve_eq_r_optim(r2[j]+1e-6,j,d,theta,m)
+
+# alpha_seq = np.linspace(-126,-127,10)
+# t1 = np.zeros(len(alpha_seq))
+# for i in range(len(alpha_seq)):
+#         r, itr = solve_eq(alpha_seq[i],d,theta,m)
+#         q =  market_shares(r,alpha_seq[i],d,theta)
+#         t1[i] = 1-sum(q)
+
+# test = np.copy(res)
+# test[0] = test[0] + 1e-3
 
 theta.set_demand(res)
 ll_i, dll_i, q0, dq0, alpha, da, itr = consumer_likelihood_eval_gradient(theta,d,m)
+print(q0)
+print(ll_i)
 
-
-theta.set_demand(res + dll_i[0:len(res)]*1e-3)
-ll_2, q0, alpha, itr = consumer_likelihood_eval(theta,d,m)
-print(ll_2-ll_i)
+# theta.set_demand(res + dll_i[0:len(res)]*1e-3)
+# ll_2, q0, alpha, itr = consumer_likelihood_eval(theta,d,m)
+# print(ll_2-ll_i)
 
 
 # ll_i - np.log(q[dat.lender_obs])
 
 dll_i = dll_i[0:6]
-g_test = deriv_test_cons_ll(true_parameters,theta,d,m)
+g_test = deriv_test_cons_ll(res,theta,d,m)
 error[i,:] = dll_i[0:len(true_parameters)] - g_test
 t2 = deriv_test_endo(d,theta,m)
 t2[0:6]
@@ -524,7 +538,7 @@ dalpha1, dr1,foc = d_foc(r,alpha,dat,theta,mbs)
 
 #### Test First Derivatives ####
 print(np.sum(np.abs(t1-dalpha)))
-print(np.sum(np.abs(t2-dr)))
+print(np.sum(np.abs((t2-dr))))
 print(np.sum(np.abs(t3-dbeta)))
 print(np.sum(np.abs(t4-dgamma)))
 

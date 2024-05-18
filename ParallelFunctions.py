@@ -66,21 +66,9 @@ def eval_map_likelihood_gradient(xlist,num_workers):
     return res
 
 def eval_map_likelihood_hessian(xlist,num_workers):
-    start = time.perf_counter()
     p = mp.Pool(num_workers) # Initialize parallel workers
-    end = time.perf_counter()
-    elapsed = end - start
-    print(f'Initialize Time: {elapsed:.6f} seconds')
-    start = time.perf_counter()
     res = p.starmap(worker_likelihood_hessian, xlist) # Evaluate in parallel
-    end = time.perf_counter()
-    elapsed = end - start
-    print(f'Evaluate Time: {elapsed:.6f} seconds')
-    start = time.perf_counter()
     p.close() # Close parallel workers
-    end = time.perf_counter()
-    elapsed = end - start
-    print(f'Closing Time: {elapsed:.6f} seconds')
     return res
 
 

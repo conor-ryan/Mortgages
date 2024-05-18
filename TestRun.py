@@ -16,7 +16,7 @@ from NumericalDerivatives import *
 from CostEstFunctions import *
 from KernelFunctions import *
 
-NUM_WORKERS = 15
+
 
 # File with Loan-Level Data
 consumer_data_file = "consumer_data_sim.csv"
@@ -107,21 +107,41 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,-30])#, # Beta_x
 
 clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 
+print("Timing 2 Cores")
 for i in range(5):
-       res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,2)
+    start = time.perf_counter()
+    res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,2)
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f'Elapsed Time: {elapsed:.6f} seconds')
 
-
+print("Timing 4 Cores")
 for i in range(5):
-       res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,4)
+    start = time.perf_counter()
+    res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,4)
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f'Elapsed Time: {elapsed:.6f} seconds')
 
 
+print("Timing 8 Cores")
 for i in range(5):
-       res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,8)
+    start = time.perf_counter()
+    res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,8)
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f'Elapsed Time: {elapsed:.6f} seconds')
 
 
+print("Timing 16 Cores")
 for i in range(5):
-       res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,16)
+    start = time.perf_counter()
+    res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,16)
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f'Elapsed Time: {elapsed:.6f} seconds')
 
 
 
-# f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,NUM_WORKERS,gtol=1e-6,xtol=1e-15)
+NUM_WORKERS = 16
+f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,NUM_WORKERS,gtol=1e-6,xtol=1e-15)

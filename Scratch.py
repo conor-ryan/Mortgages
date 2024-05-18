@@ -238,12 +238,18 @@ plt.scatter(a_mkt[test_ind],q0_mkt[test_ind])
 plt.show()
 
 
+clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
+
 
 start = time.perf_counter()
-result = macro_likelihood(alpha_list,q0_list,out_list,theta)
+result = evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,2)
 end = time.perf_counter()
 elapsed = end - start
 print(f'Time taken: {elapsed:.6f} seconds')
+
+for i in range(5):
+       res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,2)
+
 
 
 start = time.perf_counter()

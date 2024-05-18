@@ -3,7 +3,7 @@ import multiprocessing as mp
 import numpy as np
 import scipy as sp
 import KernelFunctions
-
+import time
 ### Consumer Data List Function
 ## Parallel functions need a list of arguments.
 ## This function pre-processes all of the consumer inputs into a list
@@ -32,16 +32,16 @@ def consumer_object_list(theta,cdf,mdf,mbsdf):
 # list_object - an item in the consumer object list
 ## Outputs
 # Same as the associated consumer likelihood evaluation function (without iteration count)
-def worker_likelihood(theta,list_object):
-    ll_i,q0_i,a_i,itr  = ef.consumer_likelihood_eval(theta,list_object['dat'],list_object['mbs'])
+def worker_likelihood(theta,dat,mbs):
+    ll_i,q0_i,a_i,itr  = ef.consumer_likelihood_eval(theta,dat,mbs)
     return ll_i,q0_i,a_i
 
-def worker_likelihood_gradient(theta,list_object):
-    ll_i,dll_i,q0_i,dq0_i,a_i,da_i,itr  = ef.consumer_likelihood_eval_gradient(theta,list_object['dat'],list_object['mbs'])
+def worker_likelihood_gradient(theta,dat,mbs):
+    ll_i,dll_i,q0_i,dq0_i,a_i,da_i,itr  = ef.consumer_likelihood_eval_gradient(theta,dat,mbs)
     return ll_i,dll_i,q0_i,dq0_i,a_i,da_i
 
-def worker_likelihood_hessian(theta,list_object):
-    ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,itr   = ef.consumer_likelihood_eval_hessian(theta,list_object['dat'],list_object['mbs'])
+def worker_likelihood_hessian(theta,dat,mbs):
+    ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,itr   = ef.consumer_likelihood_eval_hessian(theta,dat,mbs)
     return ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i
 
 #### Parallel Mapping Functions ####
@@ -66,9 +66,21 @@ def eval_map_likelihood_gradient(xlist,num_workers):
     return res
 
 def eval_map_likelihood_hessian(xlist,num_workers):
+    start = time.perf_counter()
     p = mp.Pool(num_workers) # Initialize parallel workers
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f'Initialize Time: {elapsed:.6f} seconds')
+    start = time.perf_counter()
     res = p.starmap(worker_likelihood_hessian, xlist) # Evaluate in parallel
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f'Evaluate Time: {elapsed:.6f} seconds')
+    start = time.perf_counter()
     p.close() # Close parallel workers
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f'Closing Time: {elapsed:.6f} seconds')
     return res
 
 
@@ -100,7 +112,7 @@ def evaluate_likelihood_parallel(x,theta,clist,num_workers):
 
 
     ## Evaluate each consumer in parallel 
-    args = [(theta,c_val) for c_val in clist]
+    args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
     res = eval_map_likelihood(args,num_workers)
 
     # Iterate over all consumers to compute likelihood
@@ -153,7 +165,7 @@ def evaluate_likelihood_gradient_parallel(x,theta,clist,num_workers):
 
 
     ## Evaluate each consumer in parallel 
-    args = [(theta,c_val) for c_val in clist]
+    args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
     res = eval_map_likelihood_gradient(args,num_workers)
 
     # Iterate over all consumers to compute likelihood
@@ -218,7 +230,7 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
     d2q0_list = np.zeros((len(clist),K,K))
     
     ## Evaluate each consumer in parallel 
-    args = [(theta,c_val) for c_val in clist]
+    args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
     res = eval_map_likelihood_hessian(args,num_workers)
 
     # Iterate over all consumers to compute likelihood
@@ -339,7 +351,10 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
         print("Parameter Guess:",x_new)
 
         # Recompute likelihood, gradient and hessian
+        st = time.start()
         ll_new, f_new, B_new, bfgs_mem_new = evaluate_likelihood_hessian_parallel(x_new,theta,clist,num_workers,BFGS_prior=bfgs_mem)
+        end = time.time()
+        print("Evaluation Time:",st-end)
         # If the initial step leads to a much lower likelihood value
         # shrink the step size to search for a better step.
         line_search = 0  # Initialize line search flag

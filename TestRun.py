@@ -105,6 +105,23 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,-30])#, # Beta_x
                 #    0,0,0, #Gamma_WH
                 #    0.32,0]) # Gamma_ZH
 
+clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
+
+for i in range(5):
+       res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,2)
 
 
-f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,NUM_WORKERS,gtol=1e-6,xtol=1e-15)
+for i in range(5):
+       res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,4)
+
+
+for i in range(5):
+       res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,8)
+
+
+for i in range(5):
+       res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,16)
+
+
+
+# f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,NUM_WORKERS,gtol=1e-6,xtol=1e-15)

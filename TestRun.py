@@ -107,30 +107,30 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,-30])#, # Beta_x
 
 clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 
-print("Timing 2 Cores")
-for i in range(5):
-    start = time.perf_counter()
-    res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,2)
-    end = time.perf_counter()
-    elapsed = end - start
-    print(f'Elapsed Time: {elapsed:.6f} seconds')
+# print("Timing 2 Cores")
+# for i in range(5):
+#     start = time.perf_counter()
+#     res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,2)
+#     end = time.perf_counter()
+#     elapsed = end - start
+#     print(f'Elapsed Time: {elapsed:.6f} seconds')
 
-print("Timing 4 Cores")
-for i in range(5):
-    start = time.perf_counter()
-    res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,4)
-    end = time.perf_counter()
-    elapsed = end - start
-    print(f'Elapsed Time: {elapsed:.6f} seconds')
+# print("Timing 4 Cores")
+# for i in range(5):
+#     start = time.perf_counter()
+#     res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,4)
+#     end = time.perf_counter()
+#     elapsed = end - start
+#     print(f'Elapsed Time: {elapsed:.6f} seconds')
 
 
-print("Timing 8 Cores")
-for i in range(5):
-    start = time.perf_counter()
-    res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,8)
-    end = time.perf_counter()
-    elapsed = end - start
-    print(f'Elapsed Time: {elapsed:.6f} seconds')
+# print("Timing 8 Cores")
+# for i in range(5):
+#     start = time.perf_counter()
+#     res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,8)
+#     end = time.perf_counter()
+#     elapsed = end - start
+#     print(f'Elapsed Time: {elapsed:.6f} seconds')
 
 
 print("Timing 16 Cores")

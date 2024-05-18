@@ -3,7 +3,6 @@ import multiprocessing as mp
 import numpy as np
 import scipy as sp
 import KernelFunctions
-import time
 ### Consumer Data List Function
 ## Parallel functions need a list of arguments.
 ## This function pre-processes all of the consumer inputs into a list
@@ -339,10 +338,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
         print("Parameter Guess:",x_new)
 
         # Recompute likelihood, gradient and hessian
-        st = time.start()
         ll_new, f_new, B_new, bfgs_mem_new = evaluate_likelihood_hessian_parallel(x_new,theta,clist,num_workers,BFGS_prior=bfgs_mem)
-        end = time.time()
-        print("Evaluation Time:",st-end)
         # If the initial step leads to a much lower likelihood value
         # shrink the step size to search for a better step.
         line_search = 0  # Initialize line search flag

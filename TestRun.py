@@ -148,3 +148,14 @@ f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_dat
 
 
 print("Test Numerical Derivative At Optimum")
+ll1, grad1 = evaluate_likelihood_gradient_parallel(res,theta,clist,NUM_WORKERS)
+print("Analytical Gradient")
+print(grad1)
+g_size = np.mean(np.sqrt(grad1[0:len(res)]**2))
+print(g_size)
+print("Numerical Gradient")
+g_test = deriv_test_ll_parallel(res,theta,clist,NUM_WORKERS)
+print(g_test)
+print(grad1[0:len(res)]-g_test)
+g_test_size =  np.mean(np.sqrt(g_test**2))
+print(g_test_size)

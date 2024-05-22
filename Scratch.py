@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import numdifftools as nd
 
 import cProfile
 import matplotlib.pyplot as plt
@@ -362,6 +363,14 @@ clist = consumer_object_list(theta,cdf,mdf,mbsdf)
 ll3 = evaluate_likelihood_parallel(x,theta,clist,3)
 ll4, grad4 = evaluate_likelihood_gradient_parallel(x,theta,clist,3)
 ll5, grad5,hess5 = evaluate_likelihood_hessian_parallel(x,theta,clist,3)
+
+
+
+def ll_num_diff(x):
+      obj = evaluate_likelihood(x,theta,consumer_data,market_data,mbs_data)
+      return obj
+
+t1 = sp.misc.derivative(ll_num_diff,res,dx=1e-6)
 
 
 ## Likelihood Derivatives

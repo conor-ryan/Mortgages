@@ -137,18 +137,18 @@ clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 #     print(f'Elapsed Time: {elapsed:.6f} seconds')
 
 
-print("Timing 16 Cores")
-for i in range(5):
-    start = time.perf_counter()
-    res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,16)
-    end = time.perf_counter()
-    elapsed = end - start
-    print(f'Elapsed Time: {elapsed:.6f} seconds')
+# print("Timing 16 Cores")
+# for i in range(5):
+#     start = time.perf_counter()
+#     res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,16)
+#     end = time.perf_counter()
+#     elapsed = end - start
+#     print(f'Elapsed Time: {elapsed:.6f} seconds')
 
 
 
 NUM_WORKERS = 16
-f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,NUM_WORKERS,gtol=1e-6,xtol=1e-15)
+f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,NUM_WORKERS,gtol=1e-2,xtol=1e-15)
 
 
 print("Test Numerical Derivative At Optimum")

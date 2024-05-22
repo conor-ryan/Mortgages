@@ -125,7 +125,7 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0
     BFGS_mem = kwargs.get("r_start")
     x_curr = theta.all()[theta.beta_x_ind]
     if BFGS_mem is None:
-        H_new = -np.identity(len(grad))/10
+        H_new = -np.identity(len(grad))
         # H_new = np.zeros((len(grad),len(grad)))
     else:
         x0,g0,H0 = BFGS_mem

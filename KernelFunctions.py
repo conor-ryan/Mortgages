@@ -187,7 +187,7 @@ def out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
     g = grad_func(x)
     grad[0:len(x)]
     f = f_obj(x)
-    return f,g
+    return f,grad
     
 # def out_share_gradient_WH(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
 #                         da_mkt,dq0_mkt,

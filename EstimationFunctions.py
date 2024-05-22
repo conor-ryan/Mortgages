@@ -174,7 +174,7 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
         da = np.zeros(len(theta.all()))
         d2ll_i = np.zeros((len(theta.all()),len(theta.all())))
         d2q0 = np.zeros((len(theta.all()),len(theta.all())))
-        # d2w = np.zeros((len(theta.all()),len(theta.all())))
+        d2a = np.zeros((len(theta.all()),len(theta.all())))
     # Potential Stability problem: one market share is close to 100% 
     elif itr == -2: 
         # Gradients and Hessians are hard to evaluate and close to zero
@@ -183,10 +183,10 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
         da = np.zeros(len(theta.all()))
         d2ll_i = np.zeros((len(theta.all()),len(theta.all())))
         d2q0 = np.zeros((len(theta.all()),len(theta.all())))
-        # d2w = np.zeros((len(theta.all()),len(theta.all())))
+        d2a = np.zeros((len(theta.all()),len(theta.all())))
     else: # Everything is fine to evaluate gradient and hessian
         # Compute log share derivatives and second derivatives
-        dlogq, d2logq, dq0,d2q0, da  = Derivatives.share_parameter_second_derivatives(r_eq,alpha,d,theta,m,model=model)
+        dlogq, d2logq, dq0,d2q0, da,d2a  = Derivatives.share_parameter_second_derivatives(r_eq,alpha,d,theta,m,model=model)
         # Compute likelihood and probability weight gradients
         dll_i = dlogq[:,d.lender_obs] + dq0/(1-q0)
         # dw = dq0/(1-q0)**2
@@ -194,7 +194,7 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
         d2ll_i = d2logq[:,:,d.lender_obs] + d2q0/(1-q0) + np.outer(dq0,dq0)/(1-q0)**2
         # d2w = d2q0/(1-q0)**2 + 2*np.outer(dq0,dq0)/(1-q0)**3
          
-    return ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,itr
+    return ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,itr
 
 ###### Functions to Evaluate Full Likelihood Function #####
 ## Similarly, three functions for objective, gradient, and hessian. 
@@ -421,6 +421,7 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
     dq0_list = np.zeros((cdf.shape[0],K))
     
     d2q0_list = np.zeros((cdf.shape[0],K,K))
+    d2alpha_list = np.zeros((cdf.shape[0],K,K))
 
     
     # Iterate over all consumers
@@ -429,7 +430,7 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
         # Subset data for consumer i
         dat, mbs = consumer_subset(i,theta,cdf,mdf,mbsdf)
         # Evaluate likelihood, gradient, and hessian for consumer i 
-        ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,itr  = consumer_likelihood_eval_hessian(theta,dat,mbs,model=model)
+        ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,itr  = consumer_likelihood_eval_hessian(theta,dat,mbs,model=model)
         # Add outside option, probability weights, and derivatives
         # pred_N_out[dat.out] += q0_i*w_i
         # pred_N[dat.out] += w_i
@@ -458,6 +459,7 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
         dq0_list[i,:] = dq0_i
 
         d2q0_list[i,:,:] = d2q0_i
+        d2alpha_list[i,:,:] = d2a_i
 
         # Track iteration counts (for potential diagnostics)
         itr_avg += max(itr,0)

@@ -103,7 +103,7 @@ theta = Parameters(consumer_data,
 
 cost_true = np.array([0,0,0.000,#Gamma_WH
                       0.4,0.0,0,0,0,0.00,0,0.00])
-theta.set_cost(cost_res.x)
+theta.set_cost(cost_true)
 true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,-30])#, # Beta_x
                 #    0,0,0, #Gamma_WH
                 #    0.32,0]) # Gamma_ZH
@@ -115,13 +115,13 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,-30])#, # Beta_x
 # theta.out_share
 # theta.out_share = np.array([0.5,0.5])
 # start = np.array([  5.57371928,   3.78605371,   2.70256459,   2.56466092 ,  3.21529397, 127.18751441])
-res = np.array([ 13.91418454 , 13.74908867 , 13.26859582 , 13.4329192,   12.91832917,
- -23.4255356 ])
+# res = np.array([ 13.91418454 , 13.74908867 , 13.26859582 , 13.4329192,   12.91832917,
+#  -23.4255356 ])
 
 
 # start = np.array([  9.44449934,   9.10344673,   9.15257351,   8.80094886,
 #          8.59485071, -36.19692372])
-f_val, res = estimate_NR_parallel(res,theta,consumer_data,market_data,mbs_data,4,gtol=1e-6,xtol=1e-15)
+f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,4,gtol=1e-6,xtol=1e-15)
 
 
 a_vec, e_vec,flag_vec = predicted_elasticity(res,theta,consumer_data,market_data,mbs_data)
@@ -208,10 +208,47 @@ model = "base"
 
 ind = theta.out_vec==0
 a_mkt = alpha_list[ind]#[theta.out_sample[o]]
-q0_vec = q0_list[ind]#[theta.out_sample[o]]
+q0_mkt = q0_list[ind]#[theta.out_sample[o]]
 c_mkt_H = c_list_H[ind]
 c_mkt_S = c_list_S[ind]
 out_share = theta.out_share[0]
+da_mkt = dalpha_list[ind,:]
+dq0_mkt = dq0_list[ind,:]
+
+d2a_mkt = d2alpha_list[ind,:,:]
+d2q0_mkt = d2q0_list[ind,:,:]
+vec = x + np.random.rand(len(x))
+
+f, g1 = out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
+                        da_mkt,dq0_mkt,out_share,theta)
+
+
+f, g2 = out_share_gradient_WH(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
+                        da_mkt,dq0_mkt,
+                        d2a_mkt,d2q0_mkt,out_share,theta)
+
+
+test = np.zeros(len(a_mkt))
+for i in range(len(a_mkt)):
+    test[i] = np.dot(np.transpose((vec-x)),np.dot(d2a_mkt[i,0:len(vec),0:len(vec)],(vec-x)))
+    # test[i,:] = np.dot(d2a_mkt[i,0:len(vec),0:len(vec)],(vec-x))
+
+test2 = np.tensordot(d2a_mkt[:,0:len(vec),0:len(vec)],vec-x,axes=1)
+test2 = 0.5*np.dot(np.tensordot(d2a_mkt[:,0:len(vec),0:len(vec)],vec-x,axes=1),np.transpose((vec-x)))
+
+def f_test(vec):
+    a_1 = a_mkt + np.dot(da_mkt[:,0:len(vec)],(vec-x)) + 0.5*np.dot(np.tensordot(d2a_mkt[:,0:len(vec),0:len(vec)],vec-x,axes=1),np.transpose((vec-x)))
+    q_1 = q0_mkt + np.dot(dq0_mkt[:,0:len(vec)],(vec-x)) + 0.5*np.dot(np.tensordot(d2q0_mkt[:,0:len(vec),0:len(vec)],vec-x,axes=1),np.transpose((vec-x)))
+    f0 = outside_share(a_1,c_mkt_H,c_mkt_S,q_1,out_share)
+
+    return f0
+
+grad_func = nd.Gradient(f_test,step=1e-8,method="central")
+hess_func = nd.Hessian(f_test,step=1e-8,method="central")
+
+t = grad_func(x)
+h = hess_func(x)
+
 
 X = np.zeros((2,len(a_mkt)))
 X[0,:] = a_mkt
@@ -366,11 +403,11 @@ ll5, grad5,hess5 = evaluate_likelihood_hessian_parallel(x,theta,clist,3)
 
 
 
-def ll_num_diff(x):
-      obj = evaluate_likelihood(x,theta,consumer_data,market_data,mbs_data)
-      return obj
+# def ll_num_diff(x):
+#       obj = evaluate_likelihood(x,theta,consumer_data,market_data,mbs_data)
+#       return obj
 
-t1 = sp.misc.derivative(ll_num_diff,res,dx=1e-6)
+# t1 = sp.misc.derivative(ll_num_diff,res,dx=1e-6)
 
 
 ## Likelihood Derivatives

@@ -145,3 +145,6 @@ for i in range(5):
 
 NUM_WORKERS = 16
 f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,NUM_WORKERS,gtol=1e-6,xtol=1e-15)
+
+
+print("Test Numerical Derivative At Optimum")

@@ -104,7 +104,7 @@ theta = Parameters(consumer_data,
 cost_true = np.array([0,0,0.000,#Gamma_WH
                       0.4,0.0,0,0,0,0.00,0,0.00])
 theta.set_cost(cost_res.x)
-true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,-30])#, # Beta_x
+true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5])#, # Beta_x
                 #    0,0,0, #Gamma_WH
                 #    0.32,0]) # Gamma_ZH
 
@@ -121,10 +121,10 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,-30])#, # Beta_x
 
 # start = np.array([  9.44449934,   9.10344673,   9.15257351,   8.80094886,
 #          8.59485071, -36.19692372])
-f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,4,gtol=1e-6,xtol=1e-15)
+# f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,4,gtol=1e-6,xtol=1e-15)
 
 
-a_vec, e_vec,flag_vec = predicted_elasticity(res,theta,consumer_data,market_data,mbs_data)
+a_vec, e_vec,flag_vec = predicted_elasticity(true_parameters,theta,consumer_data,market_data,mbs_data)
 
 
 
@@ -259,13 +259,13 @@ c_s_vec =c_mkt_S
 q0_vec =q0_mkt
 
 
-plt.scatter(a_vec,dist_cond_obs)
+plt.scatter(-np.log(-a_vec),dist_cond_obs)
 plt.show()
 
-plt.scatter(a_vec,dist_outside_obs)
+plt.scatter(-np.log(-a_vec),dist_outside_obs)
 plt.show()
 
-plt.scatter(a_vec,dist_uncond)
+plt.scatter(-np.log(-a_vec),dist_uncond)
 plt.show()
 
 ## Likelihood Derivatives

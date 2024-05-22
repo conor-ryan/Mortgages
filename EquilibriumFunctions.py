@@ -411,9 +411,16 @@ def solve_eq_r_optim(r0,j,d,theta,m,model="base"):
     alpha, r, itr = solve_eq_r(r0,j,d,theta,m,itr_max=itr_max,model=model)
     if itr<itr_max:
         if alpha < theta.alpha_min:
-            alpha = theta.alpha_min
-            r = ModelFunctions.min_rate(d,theta,m,model=model) - 1/theta.alpha_min
+            r_min = ModelFunctions.min_rate(d,theta,m,model=model)
+            if model=="base": 
+                prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(r0,len(r_min)),d,theta,m)
+            elif model=="hold":
+                prof, dprof = ModelFunctions.dHoldOnly_dr(np.repeat(r0,len(r_min)),d,theta)
+            alpha_max = -dprof[j]/prof[j] 
+            alpha = alpha_max   
+            r = r_min - 1/alpha_max
         return alpha, r, itr, True
+    
     print("Using Optim",d.i)
     # Define zero profit interest rate which will help bound feasible equi. interest rates
     r_min = ModelFunctions.min_rate(d,theta,m,model=model)
@@ -476,8 +483,8 @@ def solve_eq_r_optim(r0,j,d,theta,m,model="base"):
 
 
     if alpha < theta.alpha_min:
-        alpha = theta.alpha_min
-        r = ModelFunctions.min_rate(d,theta,m,model=model) - 1/theta.alpha_min
+        alpha = alpha_max
+        r = ModelFunctions.min_rate(d,theta,m,model=model) - 1/alpha_max
 
     return alpha,r, res.nfev, res.success
 

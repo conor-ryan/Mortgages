@@ -1,6 +1,7 @@
 import numpy as np
 import EquilibriumFunctions
 import EstimationFunctions
+import ParallelFunctions
 from Derivatives import *
 
 def deriv_test_endo(d,theta,m):
@@ -126,14 +127,14 @@ def deriv_test_ll_parallel(vec,theta,clist,num_workers):
     eps = 1e-8
     n = 0
     theta.set_demand(vec)
-    ll1 = EstimationFunctions.evaluate_likelihood_parallel(vec,theta,clist,num_workers)
+    ll1 = ParallelFunctions.evaluate_likelihood_parallel(vec,theta,clist,num_workers)
     for i in range(len(vec)):
         vec_new = np.copy(vec)
         vec_new[i] = vec[i] + eps
-        ll2 = EstimationFunctions.evaluate_likelihood_parallel(vec_new,theta,clist,num_workers)
+        ll2 = ParallelFunctions.evaluate_likelihood_parallel(vec_new,theta,clist,num_workers)
 
         vec_new[i] = vec[i] - eps
-        ll3 = EstimationFunctions.evaluate_likelihood_parallel(vec_new,theta,clist,num_workers)
+        ll3 = ParallelFunctions.evaluate_likelihood_parallel(vec_new,theta,clist,num_workers)
 
         der = (ll2-ll3)/(2*eps)
         print(der)

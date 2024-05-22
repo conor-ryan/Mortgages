@@ -100,10 +100,14 @@ theta = Parameters(consumer_data,
 
 cost_true = np.array([0,0,0.000,#Gamma_WH
                       0.4,0.0,0,0,0,0.00,0,0.00])
-theta.set_cost(cost_res.x)
-true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,-30])#, # Beta_x
+theta.set_cost(cost_true)
+true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5.0])#, # Beta_x
                 #    0,0,0, #Gamma_WH
                 #    0.32,0]) # Gamma_ZH
+
+
+
+
 
 clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 

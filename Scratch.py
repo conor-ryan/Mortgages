@@ -103,7 +103,7 @@ theta = Parameters(consumer_data,
 
 cost_true = np.array([0,0,0.000,#Gamma_WH
                       0.4,0.0,0,0,0,0.00,0,0.00])
-theta.set_cost(cost_true)
+theta.set_cost(cost_res.x)
 true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,-30])#, # Beta_x
                 #    0,0,0, #Gamma_WH
                 #    0.32,0]) # Gamma_ZH
@@ -206,15 +206,18 @@ mdf = market_data
 x = true_parameters
 model = "base"
 
-ind = theta.out_vec==0
+o = 1 
+ind = theta.out_vec==o
 a_mkt = alpha_list[ind]#[theta.out_sample[o]]
 q0_mkt = q0_list[ind]#[theta.out_sample[o]]
 c_mkt_H = c_list_H[ind]
 c_mkt_S = c_list_S[ind]
 out_share = theta.out_share[0]
+
+
+
 da_mkt = dalpha_list[ind,:]
 dq0_mkt = dq0_list[ind,:]
-
 d2a_mkt = d2alpha_list[ind,:,:]
 d2q0_mkt = d2q0_list[ind,:,:]
 vec = x + np.random.rand(len(x))
@@ -250,165 +253,20 @@ t = grad_func(x)
 h = hess_func(x)
 
 
-X = np.zeros((2,len(a_mkt)))
-X[0,:] = a_mkt
-X[1,:] = c_mkt_S
-# X[2,:] = c_mkt_S
-
-dist_cond = sp.stats.gaussian_kde(X)
-dist_cond_obs = dist_cond(X)
-
-wgts = ( (1-out_share)/(1-q0_vec) - (1-out_share))*(1/out_share)
-
-dist_out = sp.stats.gaussian_kde(X,weights=wgts)
-dist_outside_obs = dist_out(X)
-
-dist_uncond = dist_cond_obs*(1-out_share) + dist_outside_obs*out_share
-
-dist_uncond2 = dist_cond_obs/(1-q0_vec)
+a_vec =a_mkt
+c_h_vec =c_mkt_H
+c_s_vec =c_mkt_S
+q0_vec =q0_mkt
 
 
-sum(dist_uncond*q0_vec)/sum(dist_uncond)
-
-sum(dist_uncond2*q0_vec)/sum(dist_uncond2)
-
-test_ind = np.where((a_mkt<-125.5) & (a_mkt>-127))[0]
-
-plt.scatter(a_mkt[test_ind],q0_mkt[test_ind])
+plt.scatter(a_vec,dist_cond_obs)
 plt.show()
 
-
-clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
-
-
-start = time.perf_counter()
-result = evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,2)
-end = time.perf_counter()
-elapsed = end - start
-print(f'Time taken: {elapsed:.6f} seconds')
-
-for i in range(5):
-       res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,2)
-
-
-
-start = time.perf_counter()
-result = sp.stats.gaussian_kde(a_mkt[ind])
-end = time.perf_counter()
-elapsed = end - start
-print(f'Time taken: {elapsed:.6f} seconds')
-
-
-o = 0
-ind = theta.out_vec==o
-a_mkt = alpha_list[ind][theta.out_sample[o]]
-q0_mkt = q0_list[ind][theta.out_sample[o]]
-out_share = theta.out_share[o]
-
-
-start = time.perf_counter()
-result = outside_share(a_mkt,q0_mkt,out_share)
-end = time.perf_counter()
-elapsed = end - start
-print(f'Time taken: {elapsed:.6f} seconds')
-
-
-test1 = test_share_sample(a_mkt, q0_mkt,out_share,100)
-test2 = test_share_sample(a_mkt, q0_mkt,out_share,300)
-test3 = test_share_sample(a_mkt, q0_mkt,out_share,500)
-
-log_s, grad_alpha, grad_q0 = out_share_gradient(a_mkt, q0_mkt,out_share)
-
-plt.hist(test1,bins=50)
+plt.scatter(a_vec,dist_outside_obs)
 plt.show()
 
-
-plt.hist(test2,bins=50)
+plt.scatter(a_vec,dist_uncond)
 plt.show()
-
-plt.hist(test3,bins=50)
-plt.show()
-
-plt.hist(-np.log(-alpha_list),bins=50)
-plt.show()
-
-
-plt.hist(error[:,0],bins=50)
-plt.show()
-
-
-cProfile.run('KernelFunctions.outside_share(alpha_list,q0_list,out_list,theta)')
-
-a, b, c = macro_likelihood_gradient(alpha_list,q0_list,out_list,theta)
-
-dist_cond = sp.stats.gaussian_kde(a_vec)
-dist_cond_obs = dist_cond(a_vec)
-
-a_vec_sorted = np.sort(a_vec)
-
-
-
-a_range = np.linspace(-280.0,0.0,num=20000)
-dist_interp_obs = dist_cond_interp(a_range)
-
-dist_uncond_obs = dist_cond_obs*(1-0.1)/(1-q0_vec)
-
-plt.scatter(-np.log(-a_vec),dist_cond_obs)
-plt.scatter(-np.log(-a_vec),dist_outside_obs)
-plt.scatter(-np.log(-a_vec),dist_uncond)
-plt.show()
-
-
-plt.scatter(-np.log(-a_sort[spaced_index]),grad_alpha)
-plt.show()
-
-
-plt.plot(a_range,dfda(a_range))
-plt.show()
-
-plt.plot(a_range,d2fda2(a_range))
-plt.show()
-
-
-
-
-
-
-q0_dist = sp.stats.gaussian_kde(q0_list)
-
-alpha_dist = sp.stats.gaussian_kde(alpha_list)
-
-alpha_uncond2 = alpha_dist(alpha_list)*(1-0.096)/(1-q0_list)
-
-alpha_dist_uncond = sp.stats.gaussian_kde(alpha_list,weights=w_list)
-
-
-plt.scatter(q0_list,q0_dist(q0_list))
-plt.show()
-
-
-plt.scatter(alpha_list,alpha_dist(alpha_list))
-plt.show()
-
-plt.scatter(alpha_list,alpha_dist_uncond(alpha_list))
-plt.show()
-
-plt.scatter(alpha_list,alpha_uncond2)
-plt.show()
-
-clist = consumer_object_list(theta,cdf,mdf,mbsdf)
-ll3 = evaluate_likelihood_parallel(x,theta,clist,3)
-ll4, grad4 = evaluate_likelihood_gradient_parallel(x,theta,clist,3)
-ll5, grad5,hess5 = evaluate_likelihood_hessian_parallel(x,theta,clist,3)
-
-
-
-# def ll_num_diff(x):
-#       obj = evaluate_likelihood(x,theta,consumer_data,market_data,mbs_data)
-#       return obj
-
-# t1 = sp.misc.derivative(ll_num_diff,res,dx=1e-6)
-
 
 ## Likelihood Derivatives
 ll0 = evaluate_likelihood(res,theta,consumer_data,market_data,mbs_data)

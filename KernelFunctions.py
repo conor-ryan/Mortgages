@@ -5,10 +5,10 @@ import numdifftools as nd
 import EstimationFunctions
 
 def outside_share(a_vec,c_h_vec,c_s_vec,q0_vec,out_share):
-    X = np.zeros((2,len(a_vec)))
+    X = np.zeros((3,len(a_vec)))
     X[0,:] = a_vec
     X[1,:] = c_s_vec
-    # X[2,:] = c_h_vec
+    X[2,:] = c_h_vec
     # ind = a_vec>-1e4
     ind = range(len(a_vec))
     # ind = q0_vec<(1-1e-8)
@@ -41,8 +41,8 @@ def macro_likelihood(a_list,c_list_H,c_list_S,q0_list,theta):
         c_mkt_H = c_list_H[ind]
         c_mkt_S = c_list_S[ind]
 
-        pred_out[o] = outside_share(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,theta.out_share[o])
-        # pred_out[o] = np.mean(q0_mkt)
+        # pred_out[o] = outside_share(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,theta.out_share[o])
+        pred_out[o] = np.mean(q0_mkt)
     ll_macro = np.sum(theta.N*theta.out_share*np.log(pred_out)) + \
                     np.sum(theta.N*(1-theta.out_share)*np.log(1-pred_out))
     return ll_macro
@@ -68,10 +68,10 @@ def macro_likelihood_grad(a_list,c_list_H,c_list_S,q0_list,
         # log_pred_out[o] = log_out
         # x = theta.N[o]*theta.out_share[o]*(grad)
 
-        out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
-                                   da_mkt,dq0_mkt,theta.out_share[o],theta)
-        # out = np.mean(q0_mkt)
-        # g = np.mean(dq0_mkt,0)
+        # out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
+        #                            da_mkt,dq0_mkt,theta.out_share[o],theta)
+        out = np.mean(q0_mkt)
+        g = np.mean(dq0_mkt,0)
         pred_out[o] = out
         x = theta.N[o]*(theta.out_share[o]*(g)/out - (1-theta.out_share[o])*(g)/(1-out) )
         grad += x
@@ -104,19 +104,19 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0
         # log_pred_out[o] = log_out
         # x = theta.N[o]*theta.out_share[o]*(grad)
 
-        out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
-                                   da_mkt,dq0_mkt,theta.out_share[o],theta)
+        # out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
+        #                            da_mkt,dq0_mkt,theta.out_share[o],theta)
     
-        # out = np.mean(q0_mkt)
-        # g = np.mean(dq0_mkt,0)
+        out = np.mean(q0_mkt)
+        g = np.mean(dq0_mkt,0)
 
         pred_out[o] = out
         x = theta.N[o]*(theta.out_share[o]*(g)/out - (1-theta.out_share[o])*(g)/(1-out) )
         grad += x
 
-        # y = theta.N[o]*theta.out_share[o]*(np.mean(d2q0_mkt,0)/out - np.outer(g,g)/out**2) - \
-        #  theta.N[o]*(1-theta.out_share[o])*(np.mean(d2q0_mkt,0)/(1-out) + np.outer(g,g)/(1-out)**2)
-        # hess += y
+        y = theta.N[o]*theta.out_share[o]*(np.mean(d2q0_mkt,0)/out - np.outer(g,g)/out**2) - \
+         theta.N[o]*(1-theta.out_share[o])*(np.mean(d2q0_mkt,0)/(1-out) + np.outer(g,g)/(1-out)**2)
+        hess += y
 
     ll_macro = np.sum(theta.N*theta.out_share*np.log(pred_out)) + \
                     np.sum(theta.N*(1-theta.out_share)*np.log(1-pred_out))
@@ -134,8 +134,8 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0
         H_new = H0 + (np.outer(dg,dg))/(np.dot(dg,dx)) - np.dot(np.dot(H0,np.outer(dx,dx)),np.transpose(H0))/np.dot(np.dot(np.transpose(dx),H0),dx)
     
     BFGS_next = (x_curr,grad,H_new)
-    # return ll_macro, grad, hess, BFGS_next
-    return ll_macro, grad, H_new, BFGS_next
+    return ll_macro, grad, hess, BFGS_next
+    # return ll_macro, grad, H_new, BFGS_next
 
 # def out_share_gradient(a_mkt,q0_mkt,out_share):
 #     f0 = np.log(outside_share(a_mkt,q0_mkt,out_share))
@@ -168,10 +168,11 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0
 def out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
                         da_mkt,dq0_mkt,
                         out_share,theta):
-    x = theta.all()
+    grad = np.zeros(len(theta.all()))
+    x = theta.beta_x
     def f_obj(vec):
-        a_1 = a_mkt + np.dot(da_mkt[:,0:len(vec)],(vec-x)) 
-        q_1 = q0_mkt + np.dot(dq0_mkt[:,0:len(vec)],(vec-x)) 
+        a_1 = a_mkt + np.dot(da_mkt[:,0:len(x)],(vec-x)) 
+        q_1 = q0_mkt + np.dot(dq0_mkt[:,0:len(x)],(vec-x)) 
         f0 = outside_share(a_1,c_mkt_H,c_mkt_S,q_1,out_share)
         return f0
     
@@ -184,6 +185,7 @@ def out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
 
     grad_func = nd.Gradient(f_obj,step=epsilon,method="central")
     g = grad_func(x)
+    grad[0:len(x)]
     f = f_obj(x)
     return f,g
     

@@ -86,10 +86,10 @@ def market_shares(r,alpha,d,theta,return_flag=False):
     if any(s<tol):
         s = s*(1-tol) + tol*(sum(s)/len(s))
         bound_flag  = 1
-    elif ((1-sum(s))<tol):
+    if ((1-sum(s))<tol):
         s = (s/sum(s))*(1-tol) 
         bound_flag  = 1
-    elif sum(s)<tol:
+    if sum(s)<tol:
         s = s + tol  
         bound_flag  = 1
      

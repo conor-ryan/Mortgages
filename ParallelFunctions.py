@@ -304,7 +304,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
     B_best = np.copy(B_k)
     bfgs_mem_best = bfgs_mem
     # Allow small backward movement, but only occasionally
-    allowance = 1.01
+    allowance = 1.00
     backward_tracker = 0 
 
     # Iterate while error exceeds tolerance
@@ -328,7 +328,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
             bfgs_mem = bfgs_mem_best
             print("Stalled Progress. Previous best:",ll_k,"Return to best guess at:", x)
         else:
-            allowance = 1.01
+            allowance = 1.00
 
 
         # Compute newton step

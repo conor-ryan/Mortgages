@@ -364,9 +364,8 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
         while ll_new<(ll_k*allowance): # Allow a small step in the wrong direction
             line_search = 1 # Save that a line search happened
             alpha = alpha/10 # Shrink the step size
-            print("Line Search Step Size:",attempt_gradient_step,alpha) # Print step size for search
+            print("Line Search Step Size:",alpha) # Print step size for search
             s_k = alpha*p_k # Compute new step size
-            print(alpha,p_k,s_k)
             x_new[test_index] = x[test_index] + s_k # Update new candidate parameter vector
 
             ll_new, f_new, B_new, bfgs_mem_new = evaluate_likelihood_hessian_parallel(x_new,theta,clist,num_workers) # Check new value of the likelihood function
@@ -386,6 +385,8 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
             #     return ll_best, x_best
         if stall_count>3:
             print("#### No Better Point Found")
+            err = np.mean(np.sqrt(f_best[test_index]**2))
+            print("Completed with Error", err, "at Function Value",ll_best)
             return ll_best, x_best
         if (line_search == 0) & (backward_tracker==0):
             stall_count = 0

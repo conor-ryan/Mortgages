@@ -69,7 +69,7 @@ def r_sell_min(theta,d,m):
 # alpha - consumer specific price elasticity parameter
 # d - data object
 # theta - parameter object
-def market_shares(r,alpha,d,theta):
+def market_shares(r,alpha,d,theta,return_flag=False):
     # Utility Specification
     util = np.dot(d.X,theta.beta_x) + alpha*r
     max_util = np.maximum(max(util),0.0) # Normalization so exp() doesn't crash
@@ -82,14 +82,21 @@ def market_shares(r,alpha,d,theta):
     
     # Bounds on shares so log() doesn't crash
     tol = 1e-15
+    bound_flag = 0 
     if any(s<tol):
         s = s*(1-tol) + tol*(sum(s)/len(s))
-    if ((1-sum(s))<tol):
+        bound_flag  = 1
+    elif ((1-sum(s))<tol):
         s = (s/sum(s))*(1-tol) 
-    if sum(s)<tol:
+        bound_flag  = 1
+    elif sum(s)<tol:
         s = s + tol  
+        bound_flag  = 1
      
-    return s 
+    if return_flag:
+        return s, bound_flag
+    else:
+        return s 
 
 ## Market Share Derivatives (Product-Consumer-specific demand)
 # r - vector of interest rates in the market

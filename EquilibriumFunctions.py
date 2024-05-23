@@ -263,7 +263,7 @@ def solve_eq_r(r0,j,d,theta,m,itr_max=100,model="base"):
     err = 1
     itr = 0
     # Iterate until a tolerance of 1e-12 or maximum iterations of 100
-    while err>1e-12 and itr<itr_max:
+    while err>1e-15 and itr<itr_max:
         itr +=1
         # Update parameters with a newton step
         x = x - np.dot(np.transpose(np.linalg.inv(grad_k)),foc_k)
@@ -481,7 +481,7 @@ def solve_eq_r_optim(r0,j,d,theta,m,model="base",return_bound=False):
     
     x_start = np.copy(r_init)
     x_start[j] = alpha_init
-    res = sp.optimize.minimize(obj_fun,x_start,jac=True,method="TNC",bounds = bounds,tol=1e-12)
+    res = sp.optimize.minimize(obj_fun,x_start,jac=True,method="TNC",bounds = bounds,tol=1e-15)
     alpha = res.x[j]
     r = np.copy(res.x)
     r[j] = r0

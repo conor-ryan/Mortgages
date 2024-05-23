@@ -87,6 +87,9 @@ cost_res,keep_index = estimate_costs(rate_spec,mbs_price,consumer_spec,bank_spec
                                 true_first_stage,consumer_data)
 
 
+percent_drop = 1 - sum(keep_index)/len(keep_index)
+print("Cost Estimate Drop Fraction:", percent_drop)
+
 consumer_data = consumer_data[keep_index]
 pd.DataFrame(consumer_data).to_csv("refresh.csv",index=False)
 consumer_data = pd.read_csv("refresh.csv")

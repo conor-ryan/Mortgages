@@ -69,7 +69,7 @@ def r_sell_min(theta,d,m):
 # alpha - consumer specific price elasticity parameter
 # d - data object
 # theta - parameter object
-def market_shares(r,alpha,d,theta,return_flag=False):
+def market_shares(r,alpha,d,theta,return_bound=False):
     # Utility Specification
     util = np.dot(d.X,theta.beta_x) + alpha*r
     max_util = np.maximum(max(util),0.0) # Normalization so exp() doesn't crash
@@ -93,7 +93,7 @@ def market_shares(r,alpha,d,theta,return_flag=False):
         s = s + tol  
         bound_flag  = 1
      
-    if return_flag:
+    if return_bound:
         return s, bound_flag
     else:
         return s 

@@ -149,14 +149,15 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
 # itr - number of interations to solve equilibrium 
 def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
      # Initial attempt to solve the equilibrium given current parameter guess
-    alpha, r_eq, itr,success = EquilibriumFunctions.solve_eq_r_optim(d.r_obs,d.lender_obs,d,theta,m,model=model)
+    alpha, r_eq, itr,success,ab = EquilibriumFunctions.solve_eq_r_optim(d.r_obs,d.lender_obs,d,theta,m,model=model,return_bound=True)
     if not success: # Fast algorithm failed to converge, use robust algorithm
         # Robust equilibrium solution
+        ab = 0 
         alpha, r_eq, itr = EquilibriumFunctions.solve_eq_r_robust(d.r_obs,d.lender_obs,d,theta,m,model=model)
         print("Robust Eq Method",d.i,itr) # An indication of the stability of the algorithm
 
     # Compute market shares
-    q,sb = ModelFunctions.market_shares(r_eq,alpha,d,theta,return_flag=True)
+    q,sb = ModelFunctions.market_shares(r_eq,alpha,d,theta,return_bound=True)
     # Compute likelihood contribution
     ll_i = np.log(q[d.lender_obs])- np.log(np.sum(q))
     # Compute macro likelihood contribution
@@ -194,7 +195,7 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
         d2ll_i = d2logq[:,:,d.lender_obs] + d2q0/(1-q0) + np.outer(dq0,dq0)/(1-q0)**2
         # d2w = d2q0/(1-q0)**2 + 2*np.outer(dq0,dq0)/(1-q0)**3
          
-    return ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,sb
+    return ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,sb,ab
 
 ###### Functions to Evaluate Full Likelihood Function #####
 ## Similarly, three functions for objective, gradient, and hessian. 
@@ -430,7 +431,7 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
         # Subset data for consumer i
         dat, mbs = consumer_subset(i,theta,cdf,mdf,mbsdf)
         # Evaluate likelihood, gradient, and hessian for consumer i 
-        ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb  = consumer_likelihood_eval_hessian(theta,dat,mbs,model=model)
+        ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb,ab  = consumer_likelihood_eval_hessian(theta,dat,mbs,model=model)
         # Add outside option, probability weights, and derivatives
         # pred_N_out[dat.out] += q0_i*w_i
         # pred_N[dat.out] += w_i

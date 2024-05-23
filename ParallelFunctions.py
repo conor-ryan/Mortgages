@@ -200,7 +200,8 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
     theta.set_demand(x)
     K = len(theta.all())
 
-    bound_mean = np.zeros(len(clist))
+    sbound_mean = np.zeros(len(clist))
+    abound_mean = np.zeros(len(clist))
 
     # Initialize log likelihood tracking variables
     ll_micro = 0.0
@@ -226,7 +227,7 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
     for i in range(len(res)):
         # Unpack parallel results
         dat= clist[i]['dat']
-        ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,sb_i = res[i]
+        ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,sb_i,ab_i = res[i]
 
         ll_micro += ll_i
         dll_micro += dll_i
@@ -242,7 +243,8 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
 
         d2q0_list[i,:,:] = d2q0_i
 
-        bound_mean[i] = sb_i
+        sbound_mean[i] = sb_i
+        abound_mean[i] = ab_i
 
     ll_macro, dll_macro, d2ll_macro,BFGS_next = KernelFunctions.macro_likelihood_hess(alpha_list,c_list_H,c_list_S,q0_list,
                                                                                       dalpha_list,dq0_list,d2q0_list,theta,BFGS_prior=kwargs.get("BFGS_prior"))
@@ -252,7 +254,8 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
 
     # Print and output likelihood value
     # print("Likelihood:",ll, "Macro ll component:", ll_macro)
-    print("Fraction on Share Bound",np.mean(bound_mean))
+    print("Fraction on Share Bound",np.mean(sbound_mean))
+    print("Fraction below Alpha Bound",np.mean(abound_mean))
     return ll, dll, d2ll, BFGS_next
 
 

@@ -257,10 +257,8 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
     # Print and output likelihood value
     # print("Likelihood:",ll, "Macro ll component:", ll_macro)
     if np.sum(sbound_mean)>0:
-        t1 = 1-np.max(q0_list[sbound_mean==1])
-        t2 = 1-np.min(q0_list[sbound_mean==1])
         ll_component = np.sum(ll_test_vec[sbound_mean==1])
-        print("Fraction on Share Bound",np.mean(sbound_mean),ll_component,t1,t2)
+        print("Fraction on Share Bound",np.mean(sbound_mean),ll_component)
     print("Fraction below Alpha Bound",np.mean(abound_mean))
     return ll, dll, d2ll, BFGS_next
 
@@ -315,7 +313,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
     stall_count = 0
 
     # Iterate while error exceeds tolerance
-    while (err>gtol) & (ll_k>=ll_best):
+    while (err>gtol) & (ll_k<ll_best):
         # Update best so far
         if ll_k>ll_best:
             ll_best = np.copy(ll_k)
@@ -441,7 +439,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
             break
 
     # Print completion and output likelihood and estimated parameter vector
-    print("Completed with Error", err)
+    print("Completed with Error", err, "at Function Value",ll_best)
     return ll_k, x
 
 def estimate_GA_parallel(x,theta,clist,num_workers,tol=1e-3,itr_max=50):

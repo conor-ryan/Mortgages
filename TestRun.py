@@ -151,7 +151,7 @@ clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 
 
 NUM_WORKERS = 16
-f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,NUM_WORKERS,gtol=1e-6,xtol=1e-15)
+f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,NUM_WORKERS,gtol=1e-5,xtol=1e-15)
 
 
 print("Test Numerical Derivative At Optimum")

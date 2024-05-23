@@ -326,7 +326,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
             backward_tracker +=1
 
         # If we have been behind the best for long, use a more strict search
-        if (backward_tracker>2):
+        if (backward_tracker>1):
             allowance = 1.00
             # Return to values at best evaluation
             ll_k = np.copy(ll_best)

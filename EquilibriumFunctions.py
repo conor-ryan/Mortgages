@@ -418,7 +418,7 @@ def solve_eq_r_optim(r0,j,d,theta,m,model="base"):
             #     prof, dprof = ModelFunctions.dHoldOnly_dr(np.repeat(r0,len(r_min)),d,theta)
             # alpha_max = -dprof[j]/prof[j] 
             alpha = theta.alpha_min   
-            r = r_min - 1/theta.alpha_min  
+            r = ModelFunctions.min_rate(d,theta,m,model=model) - 1/theta.alpha_min  
         return alpha, r, itr, True
     
     print("Using Optim",d.i)

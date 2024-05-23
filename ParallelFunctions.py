@@ -310,8 +310,9 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
     B_best = np.copy(B_k)
     bfgs_mem_best = bfgs_mem
     # Allow small backward movement, but only occasionally
-    allowance = 1.00
+    allowance = 1.01
     backward_tracker = 0 
+    stall_count = 0
 
     # Iterate while error exceeds tolerance
     while err>gtol:
@@ -319,12 +320,15 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
         if ll_k>ll_best:
             ll_best = np.copy(ll_k)
             x_best = np.copy(x)
+            f_best = np.copy(f_k)
+            B_best = np.copy(B_k)
+            bfgs_mem_best = bfgs_mem
             backward_tracker = 0
         else:
             backward_tracker +=1
 
         # If we have been behind the best for long, use a more strict search
-        if backward_tracker>1:
+        if (backward_tracker>1):
             allowance = 1.00
             # Return to values at best evaluation
             ll_k = np.copy(ll_best)
@@ -333,8 +337,10 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
             B_k = np.copy(B_best)
             bfgs_mem = bfgs_mem_best
             print("Stalled Progress. Previous best:",ll_k,"Return to best guess at:", x)
-        else:
+        elif stall_count>0:
             allowance = 1.00
+        else:
+            allowance = 1.01
 
 
         # Compute newton step
@@ -367,6 +373,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
 
             ll_new, f_new, B_new, bfgs_mem_new = evaluate_likelihood_hessian_parallel(x_new,theta,clist,num_workers) # Check new value of the likelihood function
             if (alpha<1e-3) & (attempt_gradient_step==0):
+                stall_count +=1
                 attempt_gradient_step = 1
                 # alpha = 1e-3/np.max(np.abs(f_new[test_index]))
                 # p_k = f_k[test_index]
@@ -379,7 +386,11 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
             #     print("#### No Better Point Found")
             #     print(xtol)
             #     return ll_best, x_best
-
+        if stall_count>3:
+            print("#### No Better Point Found")
+            return ll_best, x_best
+        if line_search == 0:
+            stall_count = 0
         # # Line Search for a larger step if this is a good direction
         # if (line_search== 0) & (ll_new>ll_best):
         #     ll_test = np.copy(ll_new)

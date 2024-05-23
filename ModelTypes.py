@@ -93,7 +93,7 @@ class MBS_Func:
 ## Second Stage Parameter Class 
 # Object to hold, parse, update the parameters of the model while estimating 
 class Parameters:
-    alpha_min = -2000
+    alpha_min = -300
     # Method for simulation
 
 

@@ -202,6 +202,7 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
 
     sbound_mean = np.zeros(len(clist))
     abound_mean = np.zeros(len(clist))
+    ll_test_vec = np.zeros(len(clist))
 
     # Initialize log likelihood tracking variables
     ll_micro = 0.0
@@ -245,6 +246,7 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
 
         sbound_mean[i] = sb_i
         abound_mean[i] = ab_i
+        ll_test_vec[i] = ll_i
 
     ll_macro, dll_macro, d2ll_macro,BFGS_next = KernelFunctions.macro_likelihood_hess(alpha_list,c_list_H,c_list_S,q0_list,
                                                                                       dalpha_list,dq0_list,d2q0_list,theta,BFGS_prior=kwargs.get("BFGS_prior"))
@@ -257,7 +259,8 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
     if np.sum(sbound_mean)>0:
         t1 = 1-np.max(q0_list[sbound_mean==1])
         t2 = 1-np.min(q0_list[sbound_mean==1])
-        print("Fraction on Share Bound",np.mean(sbound_mean),t1,t2)
+        ll_component = np.sum(ll_test_vec[sbound_mean==1])
+        print("Fraction on Share Bound",np.mean(sbound_mean),ll_component,t1,t2)
     print("Fraction below Alpha Bound",np.mean(abound_mean))
     return ll, dll, d2ll, BFGS_next
 

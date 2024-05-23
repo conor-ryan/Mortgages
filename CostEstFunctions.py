@@ -4,7 +4,7 @@ import EstimationFunctions
 import ModelTypes
 
 
-def consumer_revenue(cost_data,HTM_rate_rev,MBS_rate_rev,first_stage):
+def consumer_revenue(cost_data,HTM_rate_rev,MBS_rate_rev,first_stage,return_all=False):
     # Re-compute estimated HTM - OTD cost difference
     diff_cost_pars = np.concatenate((first_stage.gamma_WS,first_stage.gamma_ZS))
     diff_costs = np.dot(cost_data,diff_cost_pars)
@@ -24,7 +24,10 @@ def consumer_revenue(cost_data,HTM_rate_rev,MBS_rate_rev,first_stage):
 
     # Gross revenue expectation w.r.t. balance sheet shock
     ERev = prob_h*rev_h + prob_s*rev_s
-    return ERev.to_numpy()
+    if return_all:
+        return rev_h.to_numpy(),MBS_rate_rev.to_numpy(), diff_costs, prob_h.to_numpy(), prob_s.to_numpy()
+    else:
+        return ERev.to_numpy()
 
 
 
@@ -60,9 +63,13 @@ def estimate_costs(rate_spec,mbs_spec,cons_cost,bank_cost,discount_spec,first_st
                                 options={'disp':True})
     
     # Create an index of all observations where estimated cost is not roughly equal to expected revenue.
-    estimated_costs = np.dot(cost_data,res.x)
-    keep_index = (revenues-estimated_costs)>5e-5
+    rev_h,rev_s,diff_cost,prob_h,prob_s = consumer_revenue(cost_data,HTM_rate_rev,MBS_rate_rev,first_stage,return_all=True)
+    estimated_hold_costs = np.dot(cost_data,res.x)
+    exp_rev = rev_h*prob_h + rev_s*prob_s
+    exp_cost = estimated_hold_costs*prob_h +  (estimated_hold_costs+diff_cost)*prob_s
+    margin = (exp_rev - exp_cost)/exp_rev
     
+    keep_index = margin>0.01
     return res, keep_index
 
 

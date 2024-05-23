@@ -69,7 +69,7 @@ def estimate_costs(rate_spec,mbs_spec,cons_cost,bank_cost,discount_spec,first_st
     exp_cost = estimated_hold_costs*prob_h +  (estimated_hold_costs+diff_cost)*prob_s
     margin = (exp_rev - exp_cost)/exp_rev
     
-    keep_index = margin>0.01
+    keep_index = margin>0.02
     return res, keep_index
 
 

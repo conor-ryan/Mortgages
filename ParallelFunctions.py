@@ -162,7 +162,7 @@ def evaluate_likelihood_gradient_parallel(x,theta,clist,num_workers):
         ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i = res[i]
 
         ll_micro += ll_i
-        dll_micro += dll_i*(1-sb_i)
+        dll_micro += dll_i
 
         alpha_list[i] = a_i
         q0_list[i] = q0_i
@@ -170,7 +170,7 @@ def evaluate_likelihood_gradient_parallel(x,theta,clist,num_workers):
         c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZS)
 
         dalpha_list[i,:] = da_i
-        dq0_list[i,:] = dq0_i*(1-sb_i)
+        dq0_list[i,:] = dq0_i
     
     # Compute Macro Likelihood Component and Gradient
     ll_macro, dll_macro = KernelFunctions.macro_likelihood_grad(alpha_list,c_list_H,c_list_S,q0_list,
@@ -230,8 +230,8 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
         ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,sb_i,ab_i = res[i]
 
         ll_micro += ll_i
-        dll_micro += dll_i*(1-sb_i)
-        d2ll_micro += d2ll_i*(1-sb_i)
+        dll_micro += dll_i
+        d2ll_micro += d2ll_i
 
         alpha_list[i] = a_i
         q0_list[i] = q0_i
@@ -239,9 +239,9 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
         c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZS)
 
         dalpha_list[i,:] = da_i
-        dq0_list[i,:] = dq0_i*(1-sb_i)
+        dq0_list[i,:] = dq0_i
 
-        d2q0_list[i,:,:] = d2q0_i*(1-sb_i)
+        d2q0_list[i,:,:] = d2q0_i
 
         sbound_mean[i] = sb_i
         abound_mean[i] = ab_i

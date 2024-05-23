@@ -134,6 +134,7 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
         # Compute likelihood and probability weight gradients
         dll_i = dlogq[:,d.lender_obs] + dq0/(1-q0)
         dll_i = dll_i*(1-sb)
+        dq0 = dq0*(1-sb)
         # dw = dq0/(1-q0)**2
 
     return ll_i, dll_i, q0, dq0, alpha, da, sb
@@ -197,6 +198,9 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
         # d2w = d2q0/(1-q0)**2 + 2*np.outer(dq0,dq0)/(1-q0)**3
         dll_i = dll_i*(1-sb)
         d2ll_i = d2ll_i*(1-sb)
+        dq0 = dq0*(1-sb)
+        d2q0 = d2q0*(1-sb)
+        
          
     return ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,sb,ab
 
@@ -447,8 +451,8 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
         # d2ll_market[dat.out,:,:] += d2ll_i*w_i + ll_i*d2w_i + np.outer(dll_i,dw_i) + np.outer(dw_i,dll_i)
 
         ll_micro += ll_i
-        dll_micro += dll_i*(1-sb)
-        d2ll_micro += d2ll_i*(1-sb)
+        dll_micro += dll_i
+        d2ll_micro += d2ll_i
 
         alpha_list[i] = a_i
         q0_list[i] = q0_i
@@ -456,9 +460,9 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
         c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZS)
 
         dalpha_list[i,:] = da_i
-        dq0_list[i,:] = dq0_i*(1-sb)
+        dq0_list[i,:] = dq0_i
 
-        d2q0_list[i,:,:] = d2q0_i*(1-sb)
+        d2q0_list[i,:,:] = d2q0_i
         d2alpha_list[i,:,:] = d2a_i
 
     

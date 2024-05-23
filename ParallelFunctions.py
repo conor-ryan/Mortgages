@@ -40,8 +40,8 @@ def worker_likelihood_gradient(theta,dat,mbs):
     return ll_i,dll_i,q0_i,dq0_i,a_i,da_i
 
 def worker_likelihood_hessian(theta,dat,mbs):
-    ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb_i   = ef.consumer_likelihood_eval_hessian(theta,dat,mbs)
-    return ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,sb_i
+    ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb_i,ab_i   = ef.consumer_likelihood_eval_hessian(theta,dat,mbs)
+    return ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,sb_i,ab_i
 
 #### Parallel Mapping Functions ####
 ## These functions implement python parallelization to the worker evaluation wrappers

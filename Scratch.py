@@ -379,7 +379,7 @@ ll0 = evaluate_likelihood(test,theta,consumer_data,market_data,mbs_data)
 error = np.zeros((consumer_data.shape[0],2))
 # for i in range(consumer_data.shape[0]):
 i = 27
-# i = 3,0, 2520
+# i = 3,0, 2520,27, 120
 # test = np.copy(res)
 # test[0] = test[0] + 1e-6
 theta.set_demand(res)
@@ -392,9 +392,9 @@ h_test = hess_test_cons_ll(res,theta,dat,mbs)
 np.sum(np.abs(g_test- dll_i[0:6]))
 np.sum(np.abs(h_test- d2ll_i[0:6,0:6]))
 
-test = np.copy(res)
-# test[5]+= 1.0
-theta.set_demand(test)
+# test = np.copy(res)
+# # test[5]+= 1.0
+# theta.set_demand(test)
 r0 = dat.r_obs
 j = dat.lender_obs
 d = dat

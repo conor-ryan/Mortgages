@@ -378,7 +378,7 @@ ll0 = evaluate_likelihood(test,theta,consumer_data,market_data,mbs_data)
 # 193, 247, 385, 524, 541
 error = np.zeros((consumer_data.shape[0],2))
 # for i in range(consumer_data.shape[0]):
-i = 2520
+i = 2516
 # i = 3,0, 2520
 # test = np.copy(res)
 # test[0] = test[0] + 1e-6

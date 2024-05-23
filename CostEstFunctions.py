@@ -61,7 +61,7 @@ def estimate_costs(rate_spec,mbs_spec,cons_cost,bank_cost,discount_spec,first_st
     
     # Create an index of all observations where estimated cost is not roughly equal to expected revenue.
     estimated_costs = np.dot(cost_data,res.x)
-    keep_index = (revenues-estimated_costs)>1e-2
+    keep_index = (revenues-estimated_costs)>5e-5
     
     return res, keep_index
 

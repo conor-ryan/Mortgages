@@ -313,7 +313,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
     stall_count = 0
 
     # Iterate while error exceeds tolerance
-    while (err>gtol) & (ll_k<ll_best):
+    while (err>gtol) | (ll_k<ll_best):
         # Update best so far
         if ll_k>ll_best:
             ll_best = np.copy(ll_k)

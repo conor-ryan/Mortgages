@@ -40,8 +40,8 @@ def worker_likelihood_gradient(theta,dat,mbs):
     return ll_i,dll_i,q0_i,dq0_i,a_i,da_i
 
 def worker_likelihood_hessian(theta,dat,mbs):
-    ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,itr   = ef.consumer_likelihood_eval_hessian(theta,dat,mbs)
-    return ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i
+    ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb_i   = ef.consumer_likelihood_eval_hessian(theta,dat,mbs)
+    return ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,sb_i
 
 #### Parallel Mapping Functions ####
 ## These functions implement python parallelization to the worker evaluation wrappers
@@ -200,6 +200,8 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
     theta.set_demand(x)
     K = len(theta.all())
 
+    bound_mean = np.zeros(len(clist))
+
     # Initialize log likelihood tracking variables
     ll_micro = 0.0
     dll_micro = np.zeros(K)
@@ -224,7 +226,7 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
     for i in range(len(res)):
         # Unpack parallel results
         dat= clist[i]['dat']
-        ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i = res[i]
+        ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,sb_i = res[i]
 
         ll_micro += ll_i
         dll_micro += dll_i
@@ -240,6 +242,8 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
 
         d2q0_list[i,:,:] = d2q0_i
 
+        bound_mean[i] = sb_i
+
     ll_macro, dll_macro, d2ll_macro,BFGS_next = KernelFunctions.macro_likelihood_hess(alpha_list,c_list_H,c_list_S,q0_list,
                                                                                       dalpha_list,dq0_list,d2q0_list,theta,BFGS_prior=kwargs.get("BFGS_prior"))
     ll = ll_micro + ll_macro
@@ -248,6 +252,7 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
 
     # Print and output likelihood value
     # print("Likelihood:",ll, "Macro ll component:", ll_macro)
+    print("Fraction on Share Bound",np.mean(bound_mean))
     return ll, dll, d2ll, BFGS_next
 
 

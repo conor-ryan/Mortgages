@@ -156,7 +156,7 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
         print("Robust Eq Method",d.i,itr) # An indication of the stability of the algorithm
 
     # Compute market shares
-    q = ModelFunctions.market_shares(r_eq,alpha,d,theta)
+    q,sb = ModelFunctions.market_shares(r_eq,alpha,d,theta,return_flag=True)
     # Compute likelihood contribution
     ll_i = np.log(q[d.lender_obs])- np.log(np.sum(q))
     # Compute macro likelihood contribution
@@ -194,7 +194,7 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
         d2ll_i = d2logq[:,:,d.lender_obs] + d2q0/(1-q0) + np.outer(dq0,dq0)/(1-q0)**2
         # d2w = d2q0/(1-q0)**2 + 2*np.outer(dq0,dq0)/(1-q0)**3
          
-    return ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,itr
+    return ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,sb
 
 ###### Functions to Evaluate Full Likelihood Function #####
 ## Similarly, three functions for objective, gradient, and hessian. 
@@ -430,7 +430,7 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
         # Subset data for consumer i
         dat, mbs = consumer_subset(i,theta,cdf,mdf,mbsdf)
         # Evaluate likelihood, gradient, and hessian for consumer i 
-        ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,itr  = consumer_likelihood_eval_hessian(theta,dat,mbs,model=model)
+        ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb  = consumer_likelihood_eval_hessian(theta,dat,mbs,model=model)
         # Add outside option, probability weights, and derivatives
         # pred_N_out[dat.out] += q0_i*w_i
         # pred_N[dat.out] += w_i
@@ -461,8 +461,6 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
         d2q0_list[i,:,:] = d2q0_i
         d2alpha_list[i,:,:] = d2a_i
 
-        # Track iteration counts (for potential diagnostics)
-        itr_avg += max(itr,0)
     
     # Compute Macro Likelihood Component and Gradient
     # pred_out_share = pred_N_out/pred_N # Predicted outside option share

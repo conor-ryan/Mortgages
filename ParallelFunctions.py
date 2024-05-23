@@ -254,7 +254,7 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
 
     # Print and output likelihood value
     # print("Likelihood:",ll, "Macro ll component:", ll_macro)
-    bounded_outside_share = np.mean(q0_list[sbound_mean==1])
+    bounded_outside_share = 1-np.mean(q0_list[sbound_mean==1])
     print("Fraction on Share Bound",np.mean(sbound_mean),bounded_outside_share)
     print("Fraction below Alpha Bound",np.mean(abound_mean))
     return ll, dll, d2ll, BFGS_next

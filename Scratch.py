@@ -115,13 +115,13 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5])#, # Beta_x
 # theta.out_share
 # theta.out_share = np.array([0.5,0.5])
 # start = np.array([  5.57371928,   3.78605371,   2.70256459,   2.56466092 ,  3.21529397, 127.18751441])
-res = np.array([  18.28098059 ,  18.10402069  , 17.46798933 ,  17.77326481 ,  17.2260773,
- -190.63685728])
+# res = np.array([  18.28098059 ,  18.10402069  , 17.46798933 ,  17.77326481 ,  17.2260773,
+#  -190.63685728])
 
 
 # start = np.array([  9.44449934,   9.10344673,   9.15257351,   8.80094886,
 #          8.59485071, -36.19692372])
-# f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,4,gtol=1e-6,xtol=1e-15)
+f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,4,gtol=1e-6,xtol=1e-15)
 
 
 a_vec, e_vec,flag_vec = predicted_elasticity(true_parameters,theta,consumer_data,market_data,mbs_data)

@@ -104,7 +104,7 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
 
 
     # Compute market shares
-    q = ModelFunctions.market_shares(r_eq,alpha,d,theta)
+    q,sb = ModelFunctions.market_shares(r_eq,alpha,d,theta,return_bound=True)
     # Compute likelihood contribution
     ll_i = np.log(q[d.lender_obs]) - np.log(np.sum(q))
     # Compute macro likelihood contribution
@@ -135,7 +135,7 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
         dll_i = dlogq[:,d.lender_obs] + dq0/(1-q0)
         # dw = dq0/(1-q0)**2
 
-    return ll_i, dll_i, q0, dq0, alpha, da, itr
+    return ll_i, dll_i, q0, dq0, alpha, da, sb
 
 ### Consumer Likelihood Evaluation with Gradient and Hessian
 # Inputs
@@ -306,12 +306,11 @@ def evaluate_likelihood_gradient(x,theta,cdf,mdf,mbsdf,model="base"):
     dq0_list = np.zeros((cdf.shape[0],K))
 
     # Iterate over all consumers
-    itr_avg = 0
     for i in range(cdf.shape[0]):
         # Subset data for consumer i
         dat, mbs = consumer_subset(i,theta,cdf,mdf,mbsdf)
         # Evaluate likelihood and gradient for consumer i 
-        ll_i,dll_i,q0_i,dq0_i,a_i,da_i,itr = consumer_likelihood_eval_gradient(theta,dat,mbs,model=model)
+        ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i = consumer_likelihood_eval_gradient(theta,dat,mbs,model=model)
         # Add outside option, probability weights, and derivatives
         # pred_N[dat.out] += w_i
         # pred_N_out[dat.out] += q0_i*w_i
@@ -325,7 +324,7 @@ def evaluate_likelihood_gradient(x,theta,cdf,mdf,mbsdf,model="base"):
         # dll_market[dat.out,:] += dll_i*w_i + ll_i*dw_i
 
         ll_micro += ll_i
-        dll_micro += dll_i
+        dll_micro += dll_i*(1-sb_i)
 
         alpha_list[i] = a_i
         q0_list[i] = q0_i
@@ -333,10 +332,8 @@ def evaluate_likelihood_gradient(x,theta,cdf,mdf,mbsdf,model="base"):
         c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZS)
 
         dalpha_list[i,:] = da_i
-        dq0_list[i,:] = dq0_i
+        dq0_list[i,:] = dq0_i*(1-sb_i)
 
-        # Track iteration counts (for potential diagnostics)
-        itr_avg += max(itr,0)
     
     # Compute Macro Likelihood Component and Gradient
     # pred_out_share = pred_N_out/pred_N # Predicted outside option share
@@ -426,7 +423,6 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
 
     
     # Iterate over all consumers
-    itr_avg = 0
     for i in range(cdf.shape[0]):
         # Subset data for consumer i
         dat, mbs = consumer_subset(i,theta,cdf,mdf,mbsdf)
@@ -448,8 +444,8 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
         # d2ll_market[dat.out,:,:] += d2ll_i*w_i + ll_i*d2w_i + np.outer(dll_i,dw_i) + np.outer(dw_i,dll_i)
 
         ll_micro += ll_i
-        dll_micro += dll_i
-        d2ll_micro += d2ll_i
+        dll_micro += dll_i*(1-sb)
+        d2ll_micro += d2ll_i*(1-sb)
 
         alpha_list[i] = a_i
         q0_list[i] = q0_i
@@ -457,9 +453,9 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
         c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZS)
 
         dalpha_list[i,:] = da_i
-        dq0_list[i,:] = dq0_i
+        dq0_list[i,:] = dq0_i*(1-sb)
 
-        d2q0_list[i,:,:] = d2q0_i
+        d2q0_list[i,:,:] = d2q0_i*(1-sb)
         d2alpha_list[i,:,:] = d2a_i
 
     

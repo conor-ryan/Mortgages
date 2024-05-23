@@ -315,7 +315,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
     stall_count = 0
 
     # Iterate while error exceeds tolerance
-    while err>gtol:
+    while (err>gtol) & (ll_k>=ll_best):
         # Update best so far
         if ll_k>ll_best:
             ll_best = np.copy(ll_k)
@@ -328,7 +328,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
             backward_tracker +=1
 
         # If we have been behind the best for long, use a more strict search
-        if (backward_tracker>1):
+        if (backward_tracker>2):
             allowance = 1.00
             # Return to values at best evaluation
             ll_k = np.copy(ll_best)
@@ -389,7 +389,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
         if stall_count>3:
             print("#### No Better Point Found")
             return ll_best, x_best
-        if line_search == 0:
+        if (line_search == 0) & (backward_tracker==0):
             stall_count = 0
         # # Line Search for a larger step if this is a good direction
         # if (line_search== 0) & (ll_new>ll_best):

@@ -115,8 +115,8 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5])#, # Beta_x
 # theta.out_share
 # theta.out_share = np.array([0.5,0.5])
 # start = np.array([  5.57371928,   3.78605371,   2.70256459,   2.56466092 ,  3.21529397, 127.18751441])
-# res = np.array([ 13.91418454 , 13.74908867 , 13.26859582 , 13.4329192,   12.91832917,
-#  -23.4255356 ])
+res = np.array([  18.28098059 ,  18.10402069  , 17.46798933 ,  17.77326481 ,  17.2260773,
+ -190.63685728])
 
 
 # start = np.array([  9.44449934,   9.10344673,   9.15257351,   8.80094886,
@@ -377,20 +377,23 @@ ll0 = evaluate_likelihood(test,theta,consumer_data,market_data,mbs_data)
 # np.log(q3[dat.lender_obs])
 # 193, 247, 385, 524, 541
 error = np.zeros((consumer_data.shape[0],2))
-for i in range(consumer_data.shape[0]):
-        # i = 27
-        # i = 3
-        # test = np.copy(res)
-        # test[0] = test[0] + 1e-6
-        theta.set_demand(res)
-        dat,mbs = consumer_subset(i,theta,consumer_data,market_data,mbs_data)
-        ll_i, dll_i, d2ll_i, q0, dq0, d2q0, alpha, da, itr = consumer_likelihood_eval_hessian(theta,dat,mbs)
-        g_test = deriv_test_cons_ll(res,theta,dat,mbs)
-        h_test = hess_test_cons_ll(res,theta,dat,mbs)
-        error[i,0] = np.sum(np.abs(g_test- dll_i[0:6]))
-        error[i,1] = np.sum(np.abs(h_test- d2ll_i[0:6,0:6]))
+# for i in range(consumer_data.shape[0]):
+i = 2520
+# i = 3,0, 2520
+# test = np.copy(res)
+# test[0] = test[0] + 1e-6
+theta.set_demand(res)
+dat,mbs = consumer_subset(i,theta,consumer_data,market_data,mbs_data)
+ll_i, dll_i, d2ll_i, q0, dq0, d2q0, alpha, da,d2a, itr = consumer_likelihood_eval_hessian(theta,dat,mbs)
+g_test = deriv_test_cons_ll(res,theta,dat,mbs)
+h_test = hess_test_cons_ll(res,theta,dat,mbs)
+# error[i,0] = np.sum(np.abs(g_test- dll_i[0:6]))
+# error[i,1] = np.sum(np.abs(h_test- d2ll_i[0:6,0:6]))
+np.sum(np.abs(g_test- dll_i[0:6]))
+np.sum(np.abs(h_test- d2ll_i[0:6,0:6]))
 
 
+theta.set_demand(res)
 r0 = dat.r_obs
 j = dat.lender_obs
 d = dat
@@ -414,7 +417,7 @@ alpha, r, itr, f = solve_eq_r_optim(r2[j]+1e-6,j,d,theta,m)
 # test = np.copy(res)
 # test[0] = test[0] + 1e-3
 
-theta.set_demand(res)
+theta.set_demand(res+10000)
 ll_i, dll_i, d2ll_i, q0, dq0, d2q0, alpha, da, itr = consumer_likelihood_eval_hessian(theta,d,m)
 print(q0)
 print(ll_i)

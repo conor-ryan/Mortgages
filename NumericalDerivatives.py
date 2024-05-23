@@ -398,7 +398,7 @@ def deriv_test_foc(r,alpha,d,theta,m):
 
 def deriv_test_cons_ll(vec,theta,d,m):
     grad = np.zeros(len(vec))
-    eps = 1e-5
+    eps = 1e-10
     theta.set_demand(vec)
     f0, x1, x2, x3, x4, x5, x6 = EstimationFunctions.consumer_likelihood_eval_gradient(theta,d,m)
     for i in range(len(vec)):

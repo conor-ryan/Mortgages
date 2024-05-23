@@ -414,7 +414,7 @@ def deriv_test_cons_ll(vec,theta,d,m):
 
 def hess_test_cons_ll(vec,theta,d,m):
     hess = np.zeros((len(vec),len(vec)))
-    eps = 1e-5
+    eps = 1e-4
     theta.set_demand(vec)
     x0, f0, q, dq, a, da, i = EstimationFunctions.consumer_likelihood_eval_gradient(theta,d,m)
     for i in range(len(vec)):

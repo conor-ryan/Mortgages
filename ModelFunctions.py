@@ -81,7 +81,7 @@ def market_shares(r,alpha,d,theta,return_bound=False):
     s = eu/(out + np.sum(eu))
     
     # Bounds on shares so log() doesn't crash
-    tol = 1e-12
+    tol = 1e-8
     bound_flag = 0 
     # if any(s<tol):
     #     s = s*(1-tol) + tol*(sum(s)/len(s))

@@ -133,6 +133,7 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
         dlogq, dq0, da = Derivatives.share_parameter_derivatives(r_eq,alpha,d,theta,m,model=model)
         # Compute likelihood and probability weight gradients
         dll_i = dlogq[:,d.lender_obs] + dq0/(1-q0)
+        dll_i = dll_i*(1-sb)
         # dw = dq0/(1-q0)**2
 
     return ll_i, dll_i, q0, dq0, alpha, da, sb
@@ -194,6 +195,8 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
         # Compute likelihood and probability weight hessians
         d2ll_i = d2logq[:,:,d.lender_obs] + d2q0/(1-q0) + np.outer(dq0,dq0)/(1-q0)**2
         # d2w = d2q0/(1-q0)**2 + 2*np.outer(dq0,dq0)/(1-q0)**3
+        dll_i = dll_i*(1-sb)
+        d2ll_i = d2ll_i*(1-sb)
          
     return ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,sb,ab
 

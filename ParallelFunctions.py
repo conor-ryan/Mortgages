@@ -365,7 +365,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
             print(alpha,p_k,s_k)
             x_new[test_index] = x[test_index] + s_k # Update new candidate parameter vector
 
-            ll_new = evaluate_likelihood_parallel(x_new,theta,clist,num_workers) # Check new value of the likelihood function
+            ll_new, f_new, B_new, bfgs_mem_new = evaluate_likelihood_hessian_parallel(x_new,theta,clist,num_workers) # Check new value of the likelihood function
             if (alpha<1e-3) & (attempt_gradient_step==0):
                 attempt_gradient_step = 1
                 # alpha = 1e-3/np.max(np.abs(f_new[test_index]))

@@ -146,18 +146,19 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5.0])#, # Beta_x
 #     elapsed = end - start
 #     print(f'Elapsed Time: {elapsed:.6f} seconds')
 NUM_WORKERS = 16
+start_parameters = np.zeros(len(true_parameters))
 
 print("Test Parallel Gradient Ascent")
 clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
-res = estimate_GA(true_parameters,theta,(clist,),parallel=True,num_workers=NUM_WORKERS,itr_max=10)
+res = estimate_GA(start_parameters,theta,(clist,),parallel=True,num_workers=NUM_WORKERS,itr_max=10)
 
 
-print("Test Serial Gradient Ascent")
-res = estimate_GA(true_parameters,theta,(consumer_data,market_data,mbs_data),parallel=False,itr_max=10)
+# print("Test Serial Gradient Ascent")
+# res = estimate_GA(true_parameters,theta,(consumer_data,market_data,mbs_data),parallel=False,itr_max=10)
 
 
 print("Estimate in Parallel")
-f_val, res = estimate_NR(true_parameters,theta,consumer_data,market_data,mbs_data,parallel=True,num_workers=NUM_WORKERS,gtol=1e-6)
+f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,parallel=True,num_workers=NUM_WORKERS,gtol=1e-6)
 
 # print("Estimate without parallel")
 # f_val, res = estimate_NR(true_parameters,theta,consumer_data,market_data,mbs_data,parallel=False,gtol=1e-6)

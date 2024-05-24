@@ -149,7 +149,7 @@ NUM_WORKERS = 16
 
 print("Test Parallel Gradient Ascent")
 clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
-res = estimate_GA(true_parameters,theta,(clist),parallel=True,num_workers=NUM_WORKERS,itr_max=10)
+res = estimate_GA(true_parameters,theta,(clist,),parallel=True,num_workers=NUM_WORKERS,itr_max=10)
 
 
 print("Test Serial Gradient Ascent")

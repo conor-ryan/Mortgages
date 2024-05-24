@@ -644,7 +644,7 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,parallel=False,num_workers=0,gtol=1e-6,xto
                 attempt_gradient_step = 1
                 print("#### Begin Gradient Ascent")
                 if parallel:
-                    ll_new,x_new = estimate_GA(x,theta,(clist),parallel=True,num_workers=num_workers,itr_max=5)
+                    ll_new,x_new = estimate_GA(x,theta,(clist,),parallel=True,num_workers=num_workers,itr_max=5)
                 else:
                     ll_new,x_new = estimate_GA(x,theta,(cdf,mdf,mbsdf),itr_max=5)
             elif (attempt_gradient_step==1):

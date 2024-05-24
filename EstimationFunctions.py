@@ -786,24 +786,6 @@ def maximize_likelihood(x,theta,cdf,mdf,mbsdf):
     return f_val, res
 
 
-def py_optim(x,theta,cdf,mdf,mbsdf,model="base"):
-
-    def f_obj(x):
-        val, g = evaluate_likelihood_gradient(x,theta,cdf,mdf,mbsdf,model=model)
-        err = np.sqrt(np.dot(g,g))
-        print("Gradient Size:", err)
-        return -val, -g
-    
-    def f_hess(x):
-        ll, g,h = evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model=model)
-        return -h
-    
-
-    res = sp.optimize.minimize(f_obj,x,method="Newton-CG",jac=True,hess=f_hess,
-                               options = {'xtol':1e-15})
-
-  
-    return res
 
 def predicted_elasticity(x,theta,cdf,mdf,mbsdf,model="base"):
     # Set parameters in the parameter object

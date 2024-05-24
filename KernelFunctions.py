@@ -4,27 +4,33 @@ import numdifftools as nd
 
 import EstimationFunctions
 
+## Use Kernel Density to estimate total purcahse share
 def outside_share(a_vec,c_h_vec,c_s_vec,q0_vec,out_share):
+    ### Three dimensional density function
+    # cost_h x cost_s x alpha
     X = np.zeros((3,len(a_vec)))
     X[0,:] = a_vec
     X[1,:] = c_s_vec
     X[2,:] = c_h_vec
-    # ind = a_vec>-1e4
+
+    # Potentially use for dropping observations from the kernel 
     ind = range(len(a_vec))
-    # ind = q0_vec<(1-1e-8)
+    
+    #Estimate kernel density
     dist_cond = sp.stats.gaussian_kde(X[:,ind])
     dist_cond_obs = dist_cond(X)
 
+    # Weight using model-implied bayes rule
     wgts = ( (1-out_share)/(1-q0_vec) - (1-out_share))*(1/out_share)
 
+    # Estimate non-purchase kernel density
     dist_out = sp.stats.gaussian_kde(X[:,ind],weights=wgts[ind])
     dist_outside_obs = dist_out(X)
 
+    # Implied total density 
     dist_uncond = dist_cond_obs*(1-out_share) + dist_outside_obs*out_share
 
-    sum(dist_uncond*q0_vec)/sum(dist_uncond)
-
-
+    # Predicted outside option share
     pred_out=sum(dist_uncond*q0_vec)/sum(dist_uncond)
     return pred_out
 
@@ -61,12 +67,6 @@ def macro_likelihood_grad(a_list,c_list_H,c_list_S,q0_list,
 
         da_mkt = da_list[ind]#[theta.out_sample[o]]
         dq0_mkt = dq0_list[ind]#[theta.out_sample[o]]
-
-        # x = theta.N[o]*theta.out_share[o]*(np.dot(grad_alpha,da_mkt) + np.dot(grad_q0,dq0_mkt))
-        
-        # out, grad= out_share_gradient(a_mkt,q0_mkt,da_mkt,dq0_mkt,theta.out_share[o])
-        # log_pred_out[o] = log_out
-        # x = theta.N[o]*theta.out_share[o]*(grad)
 
         # out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
         #                            da_mkt,dq0_mkt,theta.out_share[o],theta)

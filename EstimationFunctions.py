@@ -551,7 +551,7 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,
     test_index = theta.beta_x_ind
 
     # Create list of consumer data (could be memory issue, duplicating data)
-    clist = ParallelFunctions.consumer_object_list(theta,cdf,mdf,mbsdf)
+    clist = consumer_object_list(theta,cdf,mdf,mbsdf)
 
     # Setup the Parallel or Serial objective functions
     if parallel:

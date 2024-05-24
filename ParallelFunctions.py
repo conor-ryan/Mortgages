@@ -1,29 +1,5 @@
 import EstimationFunctions as ef
 import multiprocessing as mp
-import numpy as np
-import scipy as sp
-
-
-#### Worker Evaluation Wrappers ####
-## Each worker will take a set of arguments and output the relevant values 
-## These functions simply wrap the consumer likelihood evaluation functions in EstimationFunctions
-## One function for likelihood, gradient, and hessian.
-## Inputs
-# theta - parameter object
-# list_object - an item in the consumer object list
-## Outputs
-# Same as the associated consumer likelihood evaluation function (without iteration count)
-def worker_likelihood(theta,dat,mbs):
-    ll_i,q0_i,a_i,itr  = ef.consumer_likelihood_eval(theta,dat,mbs)
-    return ll_i,q0_i,a_i
-
-def worker_likelihood_gradient(theta,dat,mbs):
-    ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i   = ef.consumer_likelihood_eval_gradient(theta,dat,mbs)
-    return ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i 
-
-def worker_likelihood_hessian(theta,dat,mbs):
-    ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb_i,ab_i   = ef.consumer_likelihood_eval_hessian(theta,dat,mbs)
-    return ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,sb_i,ab_i
 
 #### Parallel Mapping Functions ####
 ## These functions implement python parallelization to the worker evaluation wrappers

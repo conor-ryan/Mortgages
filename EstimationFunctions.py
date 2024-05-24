@@ -806,15 +806,8 @@ def py_optim(x,theta,cdf,mdf,mbsdf,model="base"):
     return res
 
 def predicted_elasticity(x,theta,cdf,mdf,mbsdf,model="base"):
-    # Print candidate parameter guess 
-    # print("Parameters:", x)
     # Set parameters in the parameter object
     theta.set_demand(x)
-    # Initialize Aggregate Share Variables
-    # pred_N = np.zeros(len(theta.out_share))
-    # pred_N_out = np.zeros(len(theta.out_share))
-    # mkt_Obs = np.zeros(len(theta.out_share))
-    # q0_mkt = np.zeros(len(theta.out_share))
 
     alpha_list = np.zeros(cdf.shape[0])
     elas = np.zeros(cdf.shape[0])

@@ -160,7 +160,7 @@ start_parameters = np.zeros(len(true_parameters))
 
 
 print("Estimate without parallel")
-f_val, res = estimate_NR(true_parameters,theta,consumer_data,market_data,mbs_data,parallel=False,gtol=1e-6,pre_condition=True)
+f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,parallel=False,gtol=1e-6,pre_condition=True)
 
 
 

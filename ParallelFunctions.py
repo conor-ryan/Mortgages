@@ -14,16 +14,16 @@ import KernelFunctions
 # list_object - an item in the consumer object list
 ## Outputs
 # Same as the associated consumer likelihood evaluation function (without iteration count)
-def worker_likelihood(theta,dat,mbs):
-    ll_i,q0_i,a_i,itr  = ef.consumer_likelihood_eval(theta,dat,mbs)
+def worker_likelihood(theta,dat,mbs,model="base"):
+    ll_i,q0_i,a_i,itr  = ef.consumer_likelihood_eval(theta,dat,mbs,model=model)
     return ll_i,q0_i,a_i
 
-def worker_likelihood_gradient(theta,dat,mbs):
-    ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i   = ef.consumer_likelihood_eval_gradient(theta,dat,mbs)
+def worker_likelihood_gradient(theta,dat,mbs,model="base"):
+    ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i   = ef.consumer_likelihood_eval_gradient(theta,dat,mbs,model=model)
     return ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i 
 
-def worker_likelihood_hessian(theta,dat,mbs):
-    ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb_i,ab_i   = ef.consumer_likelihood_eval_hessian(theta,dat,mbs)
+def worker_likelihood_hessian(theta,dat,mbs,model="base"):
+    ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb_i,ab_i   = ef.consumer_likelihood_eval_hessian(theta,dat,mbs,model=model)
     return ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,sb_i,ab_i
 
 #### Parallel Mapping Functions ####
@@ -35,21 +35,21 @@ def worker_likelihood_hessian(theta,dat,mbs):
 # res - a list of lists. 
 # --- Each item in the outer list is a consumer
 # --- Each item in the inner list is an output from the worker-level evaluation functoin
-def eval_map_likelihood(xlist,num_workers):
+def eval_map_likelihood(xlist,num_workers,model="base"):
     p = mp.Pool(num_workers) # Initialize parallel workers
-    res = p.starmap(worker_likelihood, xlist) # Evaluate in parallel
+    res = p.starmap(worker_likelihood, xlist,model=model) # Evaluate in parallel
     p.close() # Close parallel workers
     return res
 
-def eval_map_likelihood_gradient(xlist,num_workers):
+def eval_map_likelihood_gradient(xlist,num_workers,model="base"):
     p = mp.Pool(num_workers) # Initialize parallel workers
-    res = p.starmap(worker_likelihood_gradient, xlist) # Evaluate in parallel
+    res = p.starmap(worker_likelihood_gradient, xlist,model=model) # Evaluate in parallel
     p.close() # Close parallel workers
     return res
 
-def eval_map_likelihood_hessian(xlist,num_workers):
+def eval_map_likelihood_hessian(xlist,num_workers,model="base"):
     p = mp.Pool(num_workers) # Initialize parallel workers
-    res = p.starmap(worker_likelihood_hessian, xlist) # Evaluate in parallel
+    res = p.starmap(worker_likelihood_hessian, xlist,model=model) # Evaluate in parallel
     p.close() # Close parallel workers
     return res
 

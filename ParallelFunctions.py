@@ -357,6 +357,7 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
 
         # Recompute likelihood, gradient and hessian
         ll_new, f_new, B_new, bfgs_mem_new = evaluate_likelihood_hessian_parallel(x_new,theta,clist,num_workers,BFGS_prior=bfgs_mem)
+        
         # If the initial step leads to a much lower likelihood value
         # shrink the step size to search for a better step.
         line_search = 0  # Initialize line search flag
@@ -372,17 +373,11 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
             if (alpha<1e-3) & (attempt_gradient_step==0):
                 stall_count +=1
                 attempt_gradient_step = 1
-                # alpha = 1e-3/np.max(np.abs(f_new[test_index]))
-                # p_k = f_k[test_index]
                 print("#### Begin Gradient Ascent")
                 ll_new,x_new = estimate_GA_parallel(x,theta,clist,num_workers,itr_max=5)
             elif (attempt_gradient_step==1):
                 print("#### No Better Point Found")
                 return ll_best, x_best
-            # elif (np.max(np.abs(s_k))<xtol) & (attempt_gradient_step==1):
-            #     print("#### No Better Point Found")
-            #     print(xtol)
-            #     return ll_best, x_best
         if stall_count>3:
             print("#### No Better Point Found")
             err = np.mean(np.sqrt(f_best[test_index]**2))
@@ -390,26 +385,6 @@ def estimate_NR_parallel(x,theta,cdf,mdf,mbsdf,num_workers,gtol=1e-6,xtol=1e-12)
             return ll_best, x_best
         if (line_search == 0) & (backward_tracker==0):
             stall_count = 0
-        # # Line Search for a larger step if this is a good direction
-        # if (line_search== 0) & (ll_new>ll_best):
-        #     ll_test = np.copy(ll_new)
-        #     x_test = np.copy(x_new)
-        #     fwd_ln_itr = 0
-        #     while ll_test>=ll_new: # Allow a small step in the wrong direction
-        #         ll_new = np.copy(ll_test)
-        #         x_new = np.copy(x_test)
-        #         print("Best so far", ll_new," at ",x_new)
-        #         if fwd_ln_itr>=1: # Only if one forward search succeeded
-        #             line_search = 1 # Save that a line search happened
-        #         alpha = alpha*2.0 # Shrink the step size
-        #         print("Still improving in this direction. Line Search Step Size:",alpha) # Print step size for search
-        #         s_k = alpha*p_k # Compute new step size
-        #         x_test[test_index] = x[test_index] + s_k # Update new candidate parameter vector
-                
-        #         # ll_prev = np.copy(ll_new)
-        #         ll_test = evaluate_likelihood_parallel(x_test,theta,clist,num_workers) # Check new value of the likelihood function
-        #         # x_prev = np.copy(x_test)
-        #         fwd_ln_itr +=1
                 
         # Update parameter vector after successful step
         final_step = np.abs(x-x_new)

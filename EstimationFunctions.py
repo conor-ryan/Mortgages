@@ -3,6 +3,7 @@ import EquilibriumFunctions
 import ModelFunctions
 import Derivatives
 import KernelFunctions
+import ParallelFunctions
 import numpy as np
 import scipy as sp
 
@@ -518,6 +519,178 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
 
 ##### Optimization Functions to Maximize Likelihood and Estimate Parameters #######
 
+### Newton-Raphson Estimation in Parallel
+## Use Newton-Raphson and the analytical hessian matrix to maximize likelihood function 
+# Inputs 
+# x - starting guess for parameter vector
+# theta - parameter object with specification info
+# cdf - consumer/loan level data frame
+# mdf - market level data frame
+# mbdsf - MBS coupon price data frame
+# num_workers - threads to use in parallel
+# Outputs
+# ll_k - maximized likelihood
+# x - estimated parameter vector 
+def estimate_NR(x,theta,cdf,mdf,mbsdf,parallel=True,num_workers=0,gtol=1e-6,xtol=1e-12):
+    # Testing Tool: A index of parameters to estimate while holding others constant
+    # This can help identification. range(0,len(x)) will estimate all parameters 
+    test_index = theta.beta_x_ind
+
+    # Create consumer object list for parallelization
+    if parallel:
+        # Exit if number of workers hasn't been specified
+        if num_workers<2:
+            print("ERROR: Number of workers has not been specified (or is fewer than 2)")
+            return None, x
+        # Create list of consumer data (could be memory issue, duplicating data)
+        clist = ParallelFunctions.consumer_object_list(theta,cdf,mdf,mbsdf)
+
+        def f_hess(x):
+            return ParallelFunctions.evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers)
+    
+    else:
+        def f_hess(x):
+            return evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf)
+    
+    # Set candidate vector in parameter object
+    theta.set_demand(x)  
+
+    # Print initial parameters
+    print("Starting Guess:",x)
+
+    # Initialize "new" candidate parameter vector
+    x_new = np.copy(x)
+    # Intitial evaluation of likelihood, gradient (f_k), and hessian (B_k)
+    ll_k, f_k, B_k,bfgs_mem = f_hess(x)
+    # Translate Hessian into a negative definite matrix for best ascent 
+    # Also raises a warning when Hessian is not negitive definite, bad sign if it happens near convergence
+    B_k = enforceNegDef(B_k[np.ix_(test_index,test_index)])
+    print("Starting Eval:",ll_k)
+    # Initialize error and iteration count
+    err = 1e3
+    itr = 0
+
+    # Initialize best value
+    ll_best = np.copy(ll_k)
+    x_best = np.copy(x)
+    f_best = np.copy(f_k)
+    B_best = np.copy(B_k)
+    bfgs_mem_best = bfgs_mem
+    # Allow small backward movement, but only occasionally
+    allowance = 1.01
+    backward_tracker = 0 
+    stall_count = 0
+
+    # Iterate while error exceeds tolerance
+    while (err>gtol) | (ll_k<ll_best):
+        # Update best so far
+        if ll_k>ll_best:
+            ll_best = np.copy(ll_k)
+            x_best = np.copy(x)
+            f_best = np.copy(f_k)
+            B_best = np.copy(B_k)
+            bfgs_mem_best = bfgs_mem
+            backward_tracker = 0
+        else:
+            backward_tracker +=1
+
+        # If we have been behind the best for long, use a more strict search
+        if (backward_tracker>1):
+            allowance = 1.00
+            # Return to values at best evaluation
+            ll_k = np.copy(ll_best)
+            x = np.copy(x_best)
+            f_k = np.copy(f_best)
+            B_k = np.copy(B_best)
+            bfgs_mem = bfgs_mem_best
+            print("Stalled Progress. Previous best:",ll_k,"Return to best guess at:", x)
+        elif stall_count>0:
+            allowance = 1.00
+        else:
+            allowance = 1.01
+
+
+        # Compute newton step
+        p_k = -np.dot(np.linalg.inv(B_k),f_k[test_index])
+        # Initial line search value: full newton step
+        alpha = 1.0
+        # Bound the step size to be one in order to avoid model crashes on odd parameters
+        largest_step = np.max(np.abs(p_k))
+        alpha = np.minimum(10.0/largest_step,1.0)
+
+        # Compute bounded step
+        s_k = alpha*p_k
+        # Update potential parameter vector
+        x_new[test_index] = x[test_index] + s_k
+        print("Parameter Guess:",x_new)
+
+        # Recompute likelihood, gradient and hessian
+        ll_new, f_new, B_new, bfgs_mem_new = f_hess(x_new)
+        
+        # If the initial step leads to a much lower likelihood value
+        # shrink the step size to search for a better step.
+        line_search = 0  # Initialize line search flag
+        attempt_gradient_step = 0 
+        while ll_new<(ll_k*allowance): # Allow a small step in the wrong direction
+            line_search = 1 # Save that a line search happened
+            alpha = alpha/10 # Shrink the step size
+            print("Line Search Step Size:",alpha) # Print step size for search
+            s_k = alpha*p_k # Compute new step size
+            x_new[test_index] = x[test_index] + s_k # Update new candidate parameter vector
+
+            ll_new, f_new, B_new, bfgs_mem_new = f_hess(x_new) # Check new value of the likelihood function
+            if (alpha<1e-3) & (attempt_gradient_step==0):
+                stall_count +=1
+                attempt_gradient_step = 1
+                print("#### Begin Gradient Ascent")
+                if parallel:
+                    ll_new,x_new = ParallelFunctions.estimate_GA_parallel(x,theta,clist,num_workers,itr_max=5)
+                else:
+                    ll_new,x_new = estimate_GA(x,theta,clist,num_workers,itr_max=5)
+            elif (attempt_gradient_step==1):
+                print("#### No Better Point Found")
+                return ll_best, x_best
+        if stall_count>3:
+            print("#### No Better Point Found")
+            err = np.mean(np.sqrt(f_best[test_index]**2))
+            print("Completed with Error", err, "at Function Value",ll_best)
+            return ll_best, x_best
+        if (line_search == 0) & (backward_tracker==0):
+            stall_count = 0
+                
+        # Update parameter vector after successful step
+        final_step = np.abs(x-x_new)
+        x = np.copy(x_new)
+        theta.set_demand(x)  
+        
+        # If no gradient ascent was done, update likelihood, gradient and hessian
+        if attempt_gradient_step==0:
+            ll_k = np.copy(ll_new)
+            f_k = np.copy(f_new)
+            B_k = np.copy(B_new)
+            bfgs_mem = bfgs_mem_new
+        # If there was a line search, need to evaluate the hessian again
+        else:
+            ll_k, f_k, B_k, bfgs_mem = f_hess(x)
+
+        # Check that the hessian is negative definite and enforce it if necessary
+        B_k = enforceNegDef(B_k[np.ix_(test_index,test_index)])
+        # Evaluate the sum squared error of the gradient of the likelihood function
+        err = np.mean(np.sqrt(f_k[test_index]**2))
+        # Update iteration count and print error value
+        itr+=1 
+        print("#### Iteration",itr, "Evaluated at ",x)
+        print("#### Iteration",itr, "Likelihood Value", ll_k, "Gradient Size", err)
+        print("#### Iteration",itr,"Step Size (max, min):",np.max(final_step),np.min(final_step))
+        if (np.max(final_step)<xtol) & (ll_k>=ll_best):
+            print("#### Tolerance on Parameter Updated Magnitude Reached ####")
+            break
+
+    # Print completion and output likelihood and estimated parameter vector
+    print("Completed with Error", err, "at Function Value",ll_best)
+    return ll_k, x
+
+
 ### Newton-Raphson Estimation 
 ## Use Newton-Raphson and the analytical hessian matrix to maximize likelihood function 
 # Inputs 
@@ -529,7 +702,7 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
 # Outputs
 # ll_k - maximized likelihood
 # x - estimated parameter vector 
-def estimate_NR(x,theta,cdf,mdf,mbsdf,gtol=1e-6):
+# def estimate_NR(x,theta,cdf,mdf,mbsdf,gtol=1e-6):
     # Testing Tool: A index of parameters to estimate while holding others constant
     # This can help identification. range(0,len(x)) will estimate all parameters 
     test_index = theta.beta_x_ind

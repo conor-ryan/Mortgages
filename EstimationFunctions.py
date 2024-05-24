@@ -531,7 +531,7 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
 # Outputs
 # ll_k - maximized likelihood
 # x - estimated parameter vector 
-def estimate_NR(x,theta,cdf,mdf,mbsdf,parallel=True,num_workers=0,gtol=1e-6,xtol=1e-12):
+def estimate_NR(x,theta,cdf,mdf,mbsdf,parallel=False,num_workers=0,gtol=1e-6,xtol=1e-12):
     # Testing Tool: A index of parameters to estimate while holding others constant
     # This can help identification. range(0,len(x)) will estimate all parameters 
     test_index = theta.beta_x_ind

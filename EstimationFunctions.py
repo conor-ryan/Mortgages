@@ -237,11 +237,12 @@ def evaluate_likelihood(x,theta,clist,parallel=False,num_workers=0,model="base")
         raise Exception("WARNING: non-base model specified in parallel. Parallel can only estimate base model.")
     
     # Initialize log likelihood tracking variables
+    N = len(clist)
     ll_micro = 0.0
-    alpha_list = np.zeros(len(clist))
-    c_list_H = np.zeros(len(clist))
-    c_list_S = np.zeros(len(clist))
-    q0_list = np.zeros(len(clist))
+    alpha_list = np.zeros(N)
+    c_list_H = np.zeros(N)
+    c_list_S = np.zeros(N)
+    q0_list = np.zeros(N)
 
 
     ## Evaluate each consumer in parallel
@@ -252,7 +253,7 @@ def evaluate_likelihood(x,theta,clist,parallel=False,num_workers=0,model="base")
         res = ParallelFunctions.eval_map_likelihood(args,num_workers)
 
     # Iterate over all consumers to compute likelihood
-    for i in range(len(res)):
+    for i in range(N):
         # Get consumer level results
         if parallel:
             # Unpack previously estimated results
@@ -293,6 +294,7 @@ def evaluate_likelihood_gradient(x,theta,clist,parallel=False,num_workers=0,mode
     # Set parameters in the parameter object
     theta.set_demand(x)
     K = len(theta.all())
+    N = len(clist)
 
     # Parallel estimation can only estimate the base model at the moment
     if parallel and model!="base":
@@ -304,13 +306,13 @@ def evaluate_likelihood_gradient(x,theta,clist,parallel=False,num_workers=0,mode
     dll_micro = np.zeros(K)
 
     
-    alpha_list = np.zeros(len(clist))
-    q0_list = np.zeros(len(clist))
-    c_list_H = np.zeros(len(clist))
-    c_list_S = np.zeros(len(clist))
+    alpha_list = np.zeros(N)
+    q0_list = np.zeros(N)
+    c_list_H = np.zeros(N)
+    c_list_S = np.zeros(N)
 
-    dalpha_list = np.zeros((len(clist),K))
-    dq0_list = np.zeros((len(clist),K))
+    dalpha_list = np.zeros((N,K))
+    dq0_list = np.zeros((N,K))
 
 
     ## Evaluate each consumer in parallel
@@ -321,7 +323,7 @@ def evaluate_likelihood_gradient(x,theta,clist,parallel=False,num_workers=0,mode
         res = ParallelFunctions.eval_map_likelihood_gradient(args,num_workers)
 
     # Iterate over all consumers to compute likelihood
-    for i in range(len(res)):
+    for i in range(N):
         # Get consumer level results
         if parallel:
             # Unpack previously estimated results
@@ -372,15 +374,15 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
     # Set parameters in the parameter object
     theta.set_demand(x)
     K = len(theta.all())
+    N = len(clist)
 
     # Parallel estimation can only estimate the base model at the moment
     if parallel and model!="base":
         raise Exception("WARNING: non-base model specified in parallel. Parallel can only estimate base model.")
     
 
-    sbound_mean = np.zeros(len(clist))
-    abound_mean = np.zeros(len(clist))
-    ll_test_vec = np.zeros(len(clist))
+    sbound_mean = np.zeros(N)
+    abound_mean = np.zeros(N)
 
     # Initialize log likelihood tracking variables
     ll_micro = 0.0
@@ -388,15 +390,15 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
     d2ll_micro = np.zeros((K,K))
 
     
-    alpha_list = np.zeros(len(clist))
-    q0_list = np.zeros(len(clist))
-    c_list_H = np.zeros(len(clist))
-    c_list_S = np.zeros(len(clist))
+    alpha_list = np.zeros(N)
+    q0_list = np.zeros(N)
+    c_list_H = np.zeros(N)
+    c_list_S = np.zeros(N)
 
-    dalpha_list = np.zeros((len(clist),K))
-    dq0_list = np.zeros((len(clist),K))
+    dalpha_list = np.zeros((N,K))
+    dq0_list = np.zeros((N,K))
     
-    d2q0_list = np.zeros((len(clist),K,K))
+    d2q0_list = np.zeros((N,K,K))
     
         ## Evaluate each consumer in parallel
     if parallel: 
@@ -406,7 +408,7 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
         res = ParallelFunctions.eval_map_likelihood_hessian(args,num_workers)
 
     # Iterate over all consumers to compute likelihood
-    for i in range(len(res)):
+    for i in range(len(N)):
         # Get consumer level results
         if parallel:
             # Unpack previously estimated results
@@ -435,7 +437,6 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
 
         sbound_mean[i] = sb_i
         abound_mean[i] = ab_i
-        ll_test_vec[i] = ll_i
 
     ll_macro, dll_macro, d2ll_macro,BFGS_next = KernelFunctions.macro_likelihood_hess(alpha_list,c_list_H,c_list_S,q0_list,
                                                                                       dalpha_list,dq0_list,d2q0_list,theta,BFGS_prior=kwargs.get("BFGS_prior"))
@@ -446,8 +447,7 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
     # Print and output likelihood value
     # print("Likelihood:",ll, "Macro ll component:", ll_macro)
     if np.sum(sbound_mean)>0:
-        ll_component = np.sum(ll_test_vec[sbound_mean==1])
-        print("Fraction on Share Bound",np.mean(sbound_mean),ll_component)
+        print("Fraction on Share Bound",np.mean(sbound_mean))
     print("Fraction below Alpha Bound",np.mean(abound_mean))
     return ll, dll, d2ll, BFGS_next
 

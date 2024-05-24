@@ -108,29 +108,8 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5.0])#, # Beta_x
                 #    0,0,0, #Gamma_WH
                 #    0.32,0]) # Gamma_ZH
 
-
-
-NUM_WORKERS = 16
-start_parameters = np.zeros(len(true_parameters))
-
-# print("Test Serial Gradient Ascent")
-# res = estimate_GA(true_parameters,theta,(consumer_data,market_data,mbs_data),parallel=False,itr_max=10)
-
-
-# print("Estimate in Parallel")
-# f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,parallel=True,num_workers=NUM_WORKERS,gtol=1e-4)
-
-print("Estimate in Parallel with precondition")
-f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,parallel=True,num_workers=NUM_WORKERS,gtol=1e-4,pre_condition=True)
-
-
-print("Estimate without parallel")
-f_val, res = estimate_NR(true_parameters,theta,consumer_data,market_data,mbs_data,parallel=False,gtol=1e-6,pre_condition=True)
-
-
-
 #### Run Timing Tests ####
-# clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
+clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 # print("Timing 2 Cores")
 # for i in range(5):
 #     start = time.perf_counter()
@@ -157,10 +136,30 @@ f_val, res = estimate_NR(true_parameters,theta,consumer_data,market_data,mbs_dat
 #     print(f'Elapsed Time: {elapsed:.6f} seconds')
 
 
-# print("Timing 16 Cores")
-# for i in range(5):
-#     start = time.perf_counter()
-#     res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,16)
-#     end = time.perf_counter()
-#     elapsed = end - start
-#     print(f'Elapsed Time: {elapsed:.6f} seconds')
+print("Timing 16 Cores")
+for i in range(5):
+    start = time.perf_counter()
+    res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,16)
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f'Elapsed Time: {elapsed:.6f} seconds')
+
+NUM_WORKERS = 16
+start_parameters = np.zeros(len(true_parameters))
+
+# print("Test Serial Gradient Ascent")
+# res = estimate_GA(true_parameters,theta,(consumer_data,market_data,mbs_data),parallel=False,itr_max=10)
+
+
+# print("Estimate in Parallel")
+# f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,parallel=True,num_workers=NUM_WORKERS,gtol=1e-4)
+
+print("Estimate in Parallel with precondition")
+f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,parallel=True,num_workers=NUM_WORKERS,gtol=1e-4,pre_condition=True)
+
+
+print("Estimate without parallel")
+f_val, res = estimate_NR(true_parameters,theta,consumer_data,market_data,mbs_data,parallel=False,gtol=1e-6,pre_condition=True)
+
+
+

@@ -145,16 +145,22 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5.0])#, # Beta_x
 #     end = time.perf_counter()
 #     elapsed = end - start
 #     print(f'Elapsed Time: {elapsed:.6f} seconds')
+NUM_WORKERS = 16
+
+print("Test Parallel Gradient Ascent")
+clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
+res = estimate_GA(true_parameters,theta,(clist),parallel=True,num_workers=NUM_WORKERS,itr_max=10)
+
+
+print("Test Serial Gradient Ascent")
+res = estimate_GA(true_parameters,theta,(consumer_data,market_data,mbs_data),parallel=False,itr_max=10)
+
 
 print("Estimate in Parallel")
-NUM_WORKERS = 16
-f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,NUM_WORKERS,gtol=1e-6,xtol=1e-15)
-
-print("Estimate new parallel")
 f_val, res = estimate_NR(true_parameters,theta,consumer_data,market_data,mbs_data,parallel=True,num_workers=NUM_WORKERS,gtol=1e-6)
 
-print("Estimate without parallel")
-f_val, res = estimate_NR(true_parameters,theta,consumer_data,market_data,mbs_data,parallel=False,gtol=1e-6)
+# print("Estimate without parallel")
+# f_val, res = estimate_NR(true_parameters,theta,consumer_data,market_data,mbs_data,parallel=False,gtol=1e-6)
 
 
 print("Test Numerical Derivative At Optimum")

@@ -536,7 +536,7 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,parallel=False,num_workers=0,gtol=1e-6,xto
     # This can help identification. range(0,len(x)) will estimate all parameters 
     test_index = theta.beta_x_ind
 
-    # Create consumer object list for parallelization
+    # Setup the Parallel or Serial objective functions
     if parallel:
         # Exit if number of workers hasn't been specified
         if num_workers<2:
@@ -644,9 +644,9 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,parallel=False,num_workers=0,gtol=1e-6,xto
                 attempt_gradient_step = 1
                 print("#### Begin Gradient Ascent")
                 if parallel:
-                    ll_new,x_new = ParallelFunctions.estimate_GA_parallel(x,theta,clist,num_workers,itr_max=5)
+                    ll_new,x_new = estimate_GA(x,theta,(clist),parallel=True,num_workers=num_workers,itr_max=5)
                 else:
-                    ll_new,x_new = estimate_GA(x,theta,clist,num_workers,itr_max=5)
+                    ll_new,x_new = estimate_GA(x,theta,(cdf,mdf,mbsdf),itr_max=5)
             elif (attempt_gradient_step==1):
                 print("#### No Better Point Found")
                 return ll_best, x_best
@@ -691,17 +691,6 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,parallel=False,num_workers=0,gtol=1e-6,xto
     return ll_k, x
 
 
-### Newton-Raphson Estimation 
-## Use Newton-Raphson and the analytical hessian matrix to maximize likelihood function 
-# Inputs 
-# x - starting guess for parameter vector
-# theta - parameter object with specification info
-# cdf - consumer/loan level data frame
-# mdf - market level data frame
-# mbdsf - MBS coupon price data frame
-# Outputs
-# ll_k - maximized likelihood
-# x - estimated parameter vector 
 # def estimate_NR(x,theta,cdf,mdf,mbsdf,gtol=1e-6):
     # Testing Tool: A index of parameters to estimate while holding others constant
     # This can help identification. range(0,len(x)) will estimate all parameters 
@@ -790,7 +779,101 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,parallel=False,num_workers=0,gtol=1e-6,xto
 # Outputs
 # ll_k - maximized likelihood
 # x - estimated parameter vector 
-def estimate_GA(x,theta,cdf,mdf,mbsdf):
+
+
+def estimate_GA(x,theta,data_tuple,parallel=False,num_workers=0,gtol=1e-6,xtol=1e-15,itr_max=50):
+    # Testing Tool: A index of parameters to estimate while holding others constant
+    # This can help identification. range(0,len(x)) will estimate all parameters 
+    test_index = theta.beta_x_ind
+
+    # Setup the Parallel or Serial objective functions
+    if parallel:
+        # Exit if number of workers hasn't been specified
+        if num_workers<2:
+            print("GRADIENT ASCENT PARALLEL ERROR: Number of workers has not been specified (or is fewer than 2)")
+            return None, None
+        # Create list of consumer data (could be memory issue, duplicating data)
+        clist = data_tuple[0]
+
+        def f_grad(x):
+            return ParallelFunctions.evaluate_likelihood_gradient_parallel(x,theta,clist,num_workers)
+    
+    else:
+        cdf, mdf, mbsdf = data_tuple
+        def f_grad(x):
+            return evaluate_likelihood_gradient(x,theta,cdf,mdf,mbsdf)
+    
+
+
+    # Set candidate vector in parameter object
+    theta.set_demand(x)
+
+    # Initialize "new" candidate parameter vector
+    x_test = np.copy(x)
+
+
+    # Initial evaluation of likelihood (ll_k) and gradient (g_k)
+    ll_k, g_k = f_grad(x)
+    
+    #Initial step size
+    alpha = 1e-3/np.max(np.abs(g_k[test_index]))
+
+    # Initial evaluation of error and iteration count
+    err = 1000
+    itr = 0
+    # Iterate until error becomes small or a small, maximum iteration count 
+    while (err>gtol) & (itr<itr_max):
+        # Asceding step is the step size times the gradient
+        s_k = alpha*g_k[test_index]
+        # Update candidate new parameter vector
+        x_test[test_index] = x[test_index] + s_k
+
+
+        # Evaluation of likelihood and gradient at new candidate vector
+        ll_test, g_test = f_grad(x_test)
+        
+        # Theoretically, a small enough step should always increase the likelihood
+        # If likelihood is lower at a given step, shrink until it is an ascending step
+        while ll_test<ll_k:
+
+            alpha = alpha/10 # Shrink step size
+            s_k = alpha*g_k[test_index] # New gradient ascent step
+            x_test[test_index] = x[test_index] + s_k # Recompute a new candidate parameter vector
+
+            # Re-evaluate likelihood and gradient
+            ll_test,g_test = f_grad(x_test)
+            if np.max(np.abs(s_k))<xtol:
+                print("GA: reached minimum step size")
+                return ll_k,x
+
+        # Update parameter vector after successful step
+        x = np.copy(x_test)
+        theta.set_demand(x)  
+
+        # Update step size based on the change in the step size and gradient
+        y_k = g_test[test_index] - g_k[test_index]
+        # This is a very simple, quasi-newton approximation 
+        alpha = np.abs(np.dot(s_k,s_k)/np.dot(s_k,y_k))
+
+        # Update gradient and likelihood function
+        g_k = np.copy(g_test)
+        ll_k = np.copy(ll_test)
+        
+        # Compute the sum squared error of the likelihood gradient
+        err = np.mean(np.sqrt(g_k[test_index]**2))
+        # Update iteration count and print error value
+        itr+=1 
+        print("GA Iteration:",itr, ", Likelihood:", ll_k,", Gradient Size:", err)
+   
+    # Print completion and output likelihood and estimated parameter vector
+    # print("Completed with Error", err)
+    return ll_k, x
+
+
+
+
+
+# def estimate_GA(x,theta,cdf,mdf,mbsdf):
     # Testing Tool: A index of parameters to estimate while holding others constant
     # This can help identification. range(0,len(x)) will estimate all parameters 
     test_index = theta.beta_x_ind

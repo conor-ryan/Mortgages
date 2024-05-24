@@ -408,7 +408,7 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
         res = ParallelFunctions.eval_map_likelihood_hessian(args,num_workers)
 
     # Iterate over all consumers to compute likelihood
-    for i in range(len(N)):
+    for i in range(N):
         # Get consumer level results
         if parallel:
             # Unpack previously estimated results

@@ -75,13 +75,11 @@ def consumer_likelihood_eval(theta,d,m,model="base"):
     ll_i = np.log(q[d.lender_obs]) - np.log(np.sum(q))
     # Compute macro likelihood contribution
     q0 = 1- np.sum(q) # Probability of selecting outside option
-    # w = 1/(1-q0) # Model-implied probability of appearing in sample
 
     # Potential Violation: Paramaters imply that marginal cost exceed observed prices
     if itr==-1:
         ll_i = -1000 # large likelihood penalty if MC exceeds marginal cost
         q0 = 1.0
-        # w = 1.0
         
     return ll_i, q0, alpha,itr
 
@@ -110,7 +108,6 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
     ll_i = np.log(q[d.lender_obs]) - np.log(np.sum(q))
     # Compute macro likelihood contribution
     q0 = 1- np.sum(q) # Probability of selecting outside option
-    # w = 1/(1-q0) # Model-implied probability of appearing in sample
 
     
     # Potential Violation: Paramaters imply that marginal cost exceed observed prices
@@ -118,7 +115,6 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
         ll_i = -1000 # Large likelihood penalty
         # The rest of the output should be irrelevant
         q0 = 1.0
-        # w = 1.0
         dll_i = np.zeros(len(theta.all()))  
         dq0 = np.zeros(len(theta.all()))
         da = np.zeros(len(theta.all()))
@@ -136,7 +132,6 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
         dll_i = dlogq[:,d.lender_obs] + dq0/(1-q0)
         dll_i = dll_i*(1-sb)
         dq0 = dq0*(1-sb)
-        # dw = dq0/(1-q0)**2
 
     return ll_i, dll_i, q0, dq0, alpha, da, sb
 
@@ -165,14 +160,12 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
     ll_i = np.log(q[d.lender_obs])- np.log(np.sum(q))
     # Compute macro likelihood contribution
     q0 = 1- np.sum(q) # Probability of selecting outside option
-    # w = 1/(1-q0) # Model-implied probability of appearing in sample
     
     # Potential Violation: Paramaters imply that marginal cost exceed observed prices
     if itr == -1:
         ll_i = -1000 # Large likelihood penalty
         # The rest of the output should be irrelevant
         q0 = 1.0
-        # w = 1.0
         dll_i = np.zeros(len(theta.all()))  
         dq0 = np.zeros(len(theta.all()))
         da = np.zeros(len(theta.all()))
@@ -193,10 +186,8 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
         dlogq, d2logq, dq0,d2q0, da,d2a  = Derivatives.share_parameter_second_derivatives(r_eq,alpha,d,theta,m,model=model)
         # Compute likelihood and probability weight gradients
         dll_i = dlogq[:,d.lender_obs] + dq0/(1-q0)
-        # dw = dq0/(1-q0)**2
         # Compute likelihood and probability weight hessians
         d2ll_i = d2logq[:,:,d.lender_obs] + d2q0/(1-q0) + np.outer(dq0,dq0)/(1-q0)**2
-        # d2w = d2q0/(1-q0)**2 + 2*np.outer(dq0,dq0)/(1-q0)**3
         dll_i = dll_i*(1-sb)
         d2ll_i = d2ll_i*(1-sb)
         dq0 = dq0*(1-sb)

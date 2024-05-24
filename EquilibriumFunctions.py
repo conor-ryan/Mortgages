@@ -411,13 +411,8 @@ def solve_eq_r_optim(r0,j,d,theta,m,model="base",return_bound=False):
     itr_max = 50
     alpha, r, itr = solve_eq_r(r0,j,d,theta,m,itr_max=itr_max,model=model)
     if itr<itr_max:
+        # Bound Alpha Value
         if alpha < theta.alpha_min:
-            # r_min = ModelFunctions.min_rate(d,theta,m,model=model)
-            # if model=="base": 
-            #     prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(r0,len(r_min)),d,theta,m)
-            # elif model=="hold":
-            #     prof, dprof = ModelFunctions.dHoldOnly_dr(np.repeat(r0,len(r_min)),d,theta)
-            # alpha_max = -dprof[j]/prof[j] 
             alpha = theta.alpha_min
             r = ModelFunctions.min_rate(d,theta,m,model=model) - 1/theta.alpha_min
             alpha_bound = 1
@@ -462,22 +457,6 @@ def solve_eq_r_optim(r0,j,d,theta,m,model="base",return_bound=False):
         obj = np.inner(f,f)
         obj_grad = np.dot(f,np.transpose(grad)) +  np.dot(grad,np.transpose(f))
         return obj, obj_grad
-
-    # def obj_fun_hess(x):
-    #     r = np.copy(x)
-    #     r[j] = r0
-    #     alpha = x[j]
-    #     f = ModelFunctions.expected_foc(r,alpha,d,theta,m)
-    #     grad, d1, hess,d2,d3 = Derivatives.d2_foc_all_parameters(r,alpha,d,theta,m)
-    
-    #     obj = np.inner(f,f)
-    #     obj_grad = np.dot(f,np.transpose(grad)) +  np.dot(grad,np.transpose(f))
-
-    #     obj_hess = np.zeros((len(f),len(f)))
-    #     for i in range(len(f)):
-    #         obj_hess[i,:] = np.dot(grad[i,:],np.transpose(grad)) + np.dot(f,np.transpose(hess[:,i,:])) +  np.dot(hess[:,i,:],np.transpose(f))+  np.dot(grad,np.transpose(grad[i,:]))
-        
-    #     return  obj_hess
     
     x_start = np.copy(r_init)
     x_start[j] = alpha_init
@@ -486,7 +465,7 @@ def solve_eq_r_optim(r0,j,d,theta,m,model="base",return_bound=False):
     r = np.copy(res.x)
     r[j] = r0
 
-
+    ## Bound Alpha Value
     if alpha < theta.alpha_min:
         alpha = theta.alpha_min
         r = ModelFunctions.min_rate(d,theta,m,model=model) - 1/theta.alpha_min

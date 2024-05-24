@@ -3,24 +3,7 @@ import multiprocessing as mp
 import numpy as np
 import scipy as sp
 import KernelFunctions
-### Consumer Data List Function
-## Parallel functions need a list of arguments.
-## This function pre-processes all of the consumer inputs into a list
-# theta - parameter object 
-# cdf  - consumer/loan level data frame
-# mdf  - market level data frame
-# mbsdf - MBS coupon price data frame
-## Output
-# A list of named lists where each item has two entries:
-# --- dat - consumer "Data" object
-# --- mbs - MBS price interpolation object 
 
-def consumer_object_list(theta,cdf,mdf,mbsdf):
-    consumer_list = list()
-    for i in range(cdf.shape[0]):
-        dat,mbs = ef.consumer_subset(i,theta,cdf,mdf,mbsdf)
-        consumer_list.append({'dat':dat,'mbs':mbs})
-    return consumer_list
 
 #### Worker Evaluation Wrappers ####
 ## Each worker will take a set of arguments and output the relevant values 

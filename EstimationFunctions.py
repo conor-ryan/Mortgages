@@ -49,6 +49,24 @@ def consumer_subset(i,theta,cdf,mdf,mbsdf):
     return dat, mbs
 
 
+### Consumer Data List Function
+## This function pre-processes all of the consumer inputs into a list
+# theta - parameter object 
+# cdf  - consumer/loan level data frame
+# mdf  - market level data frame
+# mbsdf - MBS coupon price data frame
+## Output
+# A list of named lists where each item has two entries:
+# --- dat - consumer "Data" object
+# --- mbs - MBS price interpolation object 
+
+def consumer_object_list(theta,cdf,mdf,mbsdf):
+    consumer_list = list()
+    for i in range(cdf.shape[0]):
+        dat,mbs = consumer_subset(i,theta,cdf,mdf,mbsdf)
+        consumer_list.append({'dat':dat,'mbs':mbs})
+    return consumer_list
+
 ###### Consumer Level Likelihood Evaluation Functions #######
 # This section contains three functions, each of which evaluate the log likelihood of an individual observation. 
 # The three functions evaluate likelihood only; likelihood & gradient; likelihood, gradient & hessian
@@ -208,7 +226,7 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
 # mbsdf - MBS coupon price data frame
 # Outputs
 # ll - log likelihood 
-def evaluate_likelihood(x,theta,cdf,mdf,mbsdf,model="base"):
+def evaluate_likelihood(x,theta,clist,model="base"):
     # Print candidate parameter guess 
     # print("Parameters:", x)
     # Set parameters in the parameter object
@@ -225,15 +243,16 @@ def evaluate_likelihood(x,theta,cdf,mdf,mbsdf,model="base"):
     ll = 0.0
     itr_avg = 0
 
-    N = cdf.shape[0]
-    alpha_list = np.zeros(cdf.shape[0])
-    c_list_H = np.zeros(cdf.shape[0])
-    c_list_S = np.zeros(cdf.shape[0])
-    q0_list = np.zeros(cdf.shape[0])
+    N = len(clist)
+    alpha_list = np.zeros(N)
+    c_list_H = np.zeros(N)
+    c_list_S = np.zeros(N)
+    q0_list = np.zeros(N)
     # Iterate over all consumers
-    for i in range(cdf.shape[0]):
+    for i in range(N):
         # Subset data for consumer i
-        dat, mbs = consumer_subset(i,theta,cdf,mdf,mbsdf)
+        dat = clist[i]['dat']
+        mbs = clist[i]['mbs']
         # Evaluate likelihood for consumer i 
         ll_i,q0_i,a_i,itr = consumer_likelihood_eval(theta,dat,mbs,model=model)
         # pred_N[dat.out] += w_i
@@ -248,10 +267,9 @@ def evaluate_likelihood(x,theta,cdf,mdf,mbsdf,model="base"):
         c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZS)
         # Track iteration counts (for potential diagnostics)
         itr_avg += max(itr,0)
+    
     # Combine Micro and Macro Likelihood Moments
     ll_macro = KernelFunctions.macro_likelihood(alpha_list,c_list_H,c_list_S,q0_list,theta)
-    # pred_out_share = q0_mkt/mkt_Obs*(1-theta.out_share) + theta.out_share*(pred_N_out/pred_N)
-    # ll_macro = np.sum(theta.N*(theta.out_share*np.log(pred_out_share)))# + (1-theta.out_share)*np.log(1-pred_out_share)))
     ll = ll_micro + ll_macro
 
 
@@ -270,7 +288,7 @@ def evaluate_likelihood(x,theta,cdf,mdf,mbsdf,model="base"):
 # Outputs
 # ll - log likelihood 
 # dll - gradient of log likelihood 
-def evaluate_likelihood_gradient(x,theta,cdf,mdf,mbsdf,model="base"):
+def evaluate_likelihood_gradient(x,theta,clist,model="base"):
     # Print candidate parameter guess 
     # print("Parameters:", x)
     # Set parameters in the parameter object
@@ -295,19 +313,20 @@ def evaluate_likelihood_gradient(x,theta,cdf,mdf,mbsdf,model="base"):
     ll_micro = 0.0
     dll_micro = np.zeros(K)
 
-    
-    alpha_list = np.zeros(cdf.shape[0])
-    q0_list = np.zeros(cdf.shape[0])
-    c_list_H = np.zeros(cdf.shape[0])
-    c_list_S = np.zeros(cdf.shape[0])
+    N = len(clist)
+    alpha_list = np.zeros(N)
+    q0_list = np.zeros(N)
+    c_list_H = np.zeros(N)
+    c_list_S = np.zeros(N)
 
-    dalpha_list = np.zeros((cdf.shape[0],K))
-    dq0_list = np.zeros((cdf.shape[0],K))
+    dalpha_list = np.zeros((N,K))
+    dq0_list = np.zeros((N,K))
 
     # Iterate over all consumers
-    for i in range(cdf.shape[0]):
+    for i in range(N):
         # Subset data for consumer i
-        dat, mbs = consumer_subset(i,theta,cdf,mdf,mbsdf)
+        dat = clist[i]['dat']
+        mbs = clist[i]['mbs']
         # Evaluate likelihood and gradient for consumer i 
         ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i = consumer_likelihood_eval_gradient(theta,dat,mbs,model=model)
         # Add outside option, probability weights, and derivatives
@@ -380,13 +399,13 @@ def evaluate_likelihood_gradient(x,theta,cdf,mdf,mbsdf,model="base"):
 # ll - log likelihood 
 # dll - gradient of log likelihood 
 # d2ll - hessian of log likelihood 
-def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
+def evaluate_likelihood_hessian(x,theta,clist,model="base",**kwargs):
     # Print candidate parameter guess 
     # print("Parameters:", x)
     # Set parameters in the parameter object
     theta.set_demand(x)
     K = len(theta.all())
-
+    N = len(clist)
     # Initialize Aggregate Share Variables
     # Necessary for matching outside option, and correcting selection into the sample
     # Predicted outside option takeup
@@ -409,22 +428,23 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
     d2ll_micro = np.zeros((K,K))
 
     
-    alpha_list = np.zeros(cdf.shape[0])
-    q0_list = np.zeros(cdf.shape[0])
-    c_list_H = np.zeros(cdf.shape[0])
-    c_list_S = np.zeros(cdf.shape[0])
+    alpha_list = np.zeros(N)
+    q0_list = np.zeros(N)
+    c_list_H = np.zeros(N)
+    c_list_S = np.zeros(N)
 
-    dalpha_list = np.zeros((cdf.shape[0],K))
-    dq0_list = np.zeros((cdf.shape[0],K))
+    dalpha_list = np.zeros((N,K))
+    dq0_list = np.zeros((N,K))
     
-    d2q0_list = np.zeros((cdf.shape[0],K,K))
-    d2alpha_list = np.zeros((cdf.shape[0],K,K))
+    d2q0_list = np.zeros((N,K,K))
+    d2alpha_list = np.zeros((N,K,K))
 
     
     # Iterate over all consumers
-    for i in range(cdf.shape[0]):
+    for i in range(N):
         # Subset data for consumer i
-        dat, mbs = consumer_subset(i,theta,cdf,mdf,mbsdf)
+        dat = clist[i]['dat']
+        mbs = clist[i]['mbs']
         # Evaluate likelihood, gradient, and hessian for consumer i 
         ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb,ab  = consumer_likelihood_eval_hessian(theta,dat,mbs,model=model)
         # Add outside option, probability weights, and derivatives
@@ -530,18 +550,19 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,
     # This can help identification. range(0,len(x)) will estimate all parameters 
     test_index = theta.beta_x_ind
 
+    # Create list of consumer data (could be memory issue, duplicating data)
+    clist = ParallelFunctions.consumer_object_list(theta,cdf,mdf,mbsdf)
+
     # Setup the Parallel or Serial objective functions
     if parallel:
         # Exit if number of workers hasn't been specified
         if num_workers<2:
             print("ERROR: Number of workers has not been specified (or is fewer than 2)")
             return None, x
-        # Create list of consumer data (could be memory issue, duplicating data)
-        clist = ParallelFunctions.consumer_object_list(theta,cdf,mdf,mbsdf)
 
         if pre_condition:
             print("Run Gradient Ascent to pre-condition:")
-            ll_pre,x = estimate_GA(x,theta,(clist,),parallel=True,num_workers=num_workers,itr_max=pre_cond_itr)
+            ll_pre,x = estimate_GA(x,theta,clist,parallel=True,num_workers=num_workers,itr_max=pre_cond_itr)
 
         def f_hess(x):
             return ParallelFunctions.evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers)
@@ -549,10 +570,10 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,
     else:
         if pre_condition:
             print("Run Gradient Ascent to pre-condition:")
-            ll_pre,x = estimate_GA(x,theta,(cdf,mdf,mbsdf),parallel=False,itr_max=pre_cond_itr)
+            ll_pre,x = estimate_GA(x,theta,clist,parallel=False,itr_max=pre_cond_itr)
 
         def f_hess(x):
-            return evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf)
+            return evaluate_likelihood_hessian(x,theta,clist)
     
     # Set candidate vector in parameter object
     theta.set_demand(x)  
@@ -646,10 +667,7 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,
                 stall_count +=1
                 attempt_gradient_step = 1
                 print("#### Begin Gradient Ascent")
-                if parallel:
-                    ll_new,x_new = estimate_GA(x,theta,(clist,),parallel=True,num_workers=num_workers,itr_max=5)
-                else:
-                    ll_new,x_new = estimate_GA(x,theta,(cdf,mdf,mbsdf),itr_max=5)
+                ll_new,x_new = estimate_GA(x,theta,clist,parallel=parallel,num_workers=num_workers,itr_max=pre_cond_itr)
             elif (attempt_gradient_step==1):
                 print("#### No Better Point Found")
                 return ll_best, x_best
@@ -695,81 +713,6 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,
     return ll_k, x
 
 
-# def estimate_NR(x,theta,cdf,mdf,mbsdf,gtol=1e-6):
-    # Testing Tool: A index of parameters to estimate while holding others constant
-    # This can help identification. range(0,len(x)) will estimate all parameters 
-    test_index = theta.beta_x_ind
-    # Set candidate vector in parameter object
-    theta.set_demand(x)
-
-    # Initialize "new" candidate parameter vector
-    x_new = np.copy(x)
-    # Intitial evaluation of likelihood, gradient (f_k), and hessian (B_k)
-    ll_k, f_k, B_k, bfgs_mem = evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf)
-    # Translate Hessian into a negative definite matrix for best ascent 
-    # Also raises a warning when Hessian is not negitive definite, bad sign if it happens near convergence
-    B_k = enforceNegDef(B_k[np.ix_(test_index,test_index)])
-
-    # Initialize error and iteration count
-    err = 1
-    itr = 0
-    # Iterate while error exceeds tolerance
-    while err>gtol:
-        # Compute newton step
-        p_k = -np.dot(np.linalg.inv(B_k),f_k[test_index])
-        # Initial line search value: full newton step
-        alpha = 1.0
-        # Bound the step size to be one in order to avoid model crashes on odd parameters
-        largest_step = np.max(np.abs(p_k))
-        alpha = np.minimum(10.0/largest_step,1.0)
-
-        # Compute bounded step
-        s_k = alpha*p_k
-        # Update potential parameter vector
-        x_new[test_index] = x[test_index] + s_k
-
-        # Recompute likelihood, gradient and hessian
-        ll_new, f_new, B_new, bfgs_mem_new = evaluate_likelihood_hessian(x_new,theta,cdf,mdf,mbsdf,BFGS_prior=bfgs_mem)
-        
-        # If the initial step leads to a much lower likelihood value
-        # shrink the step size to search for a better step.
-        line_search = 0  # Initialize line search flag
-        while ll_new<ll_k*1.0005: # Allow a small step in the wrong direction
-            line_search = 1 # Save that a line search happened
-            alpha = alpha/2 # Shrink the step size
-            print("Line Search Step Size:",alpha) # Print step size for search
-            s_k = alpha*p_k # Compute new step size
-            x_new[test_index] = x[test_index] + s_k # Update new candidate parameter vector
-
-            ll_new = evaluate_likelihood(x_new,theta,cdf,mdf,mbsdf) # Check new value of the likelihood function
-
-        # Update parameter vector after successful step
-        x = np.copy(x_new)
-        theta.set_demand(x)  
-        
-        # If no line search was done, update likelihood, gradient and hessian
-        if line_search==0:
-            ll_k = np.copy(ll_new)
-            f_k = np.copy(f_new)
-            B_k = np.copy(B_new)
-            bfgs_mem = bfgs_mem_new
-        # If there was a line search, need to evaluate the hessian again
-        else:
-            ll_k, f_k, B_k, bfgs_mem = evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,BFGS_prior=bfgs_mem)
-
-        # Check that the hessian is negative definite and enforce it if necessary
-        B_k = enforceNegDef(B_k[np.ix_(test_index,test_index)])
-
-        # Evaluate the sum squared error of the gradient of the likelihood function
-        err = np.sqrt(np.dot(f_k[test_index],f_k[test_index]))
-        # Update iteration count and print error value
-        itr+=1 
-        print("#### Iteration",itr, "Error", err)
-
-    # Print completion and output likelihood and estimated parameter vector
-    print("Completed with Error", err)
-    return ll_k, x
-
 ### Gradient Ascent Estimation 
 ## Use gradient only to maximize likelihood function 
 ## This method is very robust but very slow
@@ -785,7 +728,7 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,
 # x - estimated parameter vector 
 
 
-def estimate_GA(x,theta,data_tuple,parallel=False,num_workers=0,gtol=1e-6,xtol=1e-15,itr_max=50):
+def estimate_GA(x,theta,clist,parallel=False,num_workers=0,gtol=1e-6,xtol=1e-15,itr_max=50):
     # Testing Tool: A index of parameters to estimate while holding others constant
     # This can help identification. range(0,len(x)) will estimate all parameters 
     test_index = theta.beta_x_ind
@@ -796,16 +739,13 @@ def estimate_GA(x,theta,data_tuple,parallel=False,num_workers=0,gtol=1e-6,xtol=1
         if num_workers<2:
             print("GRADIENT ASCENT PARALLEL ERROR: Number of workers has not been specified (or is fewer than 2)")
             return None, None
-        # Create list of consumer data (could be memory issue, duplicating data)
-        clist = data_tuple[0]
 
         def f_grad(x):
             return ParallelFunctions.evaluate_likelihood_gradient_parallel(x,theta,clist,num_workers)
     
     else:
-        cdf, mdf, mbsdf = data_tuple
         def f_grad(x):
-            return evaluate_likelihood_gradient(x,theta,cdf,mdf,mbsdf)
+            return evaluate_likelihood_gradient(x,theta,clist)
     
 
 
@@ -873,75 +813,6 @@ def estimate_GA(x,theta,data_tuple,parallel=False,num_workers=0,gtol=1e-6,xtol=1
     # print("Completed with Error", err)
     return ll_k, x
 
-
-
-
-
-# def estimate_GA(x,theta,cdf,mdf,mbsdf):
-    # Testing Tool: A index of parameters to estimate while holding others constant
-    # This can help identification. range(0,len(x)) will estimate all parameters 
-    test_index = theta.beta_x_ind
-    # Set candidate vector in parameter object
-    theta.set_demand(x)
-
-    # Initialize "new" candidate parameter vector
-    x_test = np.copy(x)
-
-
-    # Initial evaluation of likelihood (ll_k) and gradient (g_k)
-    ll_k, g_k = evaluate_likelihood_gradient(x,theta,cdf,mdf,mbsdf)
-
-    #Initial step size
-    alpha = 1e-6/np.max(np.abs(g_k[test_index]))
-
-    # Initial evaluation of error and iteration count
-    err = 1000
-    itr = 0
-    # Iterate until error becomes small or a small, maximum iteration count 
-    while (err>1e-6) & (itr<30):
-        # Asceding step is the step size times the gradient
-        s_k = alpha*g_k[test_index]
-        # Update candidate new parameter vector
-        x_test[test_index] = x[test_index] + s_k
-
-
-        # Evaluation of likelihood and gradient at new candidate vector
-        ll_test, g_test = evaluate_likelihood_gradient(x_test,theta,cdf,mdf,mbsdf)
-        
-        # Theoretically, a small enough step should always increase the likelihood
-        # If likelihood is lower at a given step, shrink until it is an ascending step
-        while ll_test<ll_k:
-
-            alpha = alpha/10 # Shrink step size
-            print("Line Search Step",alpha) # Print the linesearch step size
-            s_k = alpha*g_k[test_index] # New gradient ascent step
-            x_test[test_index] = x[test_index] + s_k # Recompute a new candidate parameter vector
-
-            # Re-evaluate likelihood and gradient
-            ll_test,g_test = evaluate_likelihood_gradient(x_test,theta,cdf,mdf,mbsdf)
-
-        # Update parameter vector after successful step
-        x = np.copy(x_test)
-        theta.set_demand(x)  
-
-        # Update step size based on the change in the step size and gradient
-        y_k = g_test[test_index] - g_k[test_index]
-        # This is a very simple, quasi-newton approximation 
-        alpha = np.abs(np.dot(s_k,s_k)/np.dot(s_k,y_k))
-
-        # Update gradient and likelihood function
-        g_k = np.copy(g_test)
-        ll_k = np.copy(ll_test)
-        
-        # Compute the sum squared error of the likelihood gradient
-        err = np.sqrt(np.dot(g_k[test_index],g_k[test_index]))
-        # Update iteration count and print error value
-        itr+=1 
-        print("#### Iteration",itr, "Error", err)
-   
-    # Print completion and output likelihood and estimated parameter vector
-    print("Completed with Error", err)
-    return ll_k, x
 
 ### Enforce Negative Definite Matrix
 # Takes a symmetric matrix and returns a negative definite version based on the eigen-value decomposition

@@ -2,7 +2,6 @@ import EstimationFunctions as ef
 import multiprocessing as mp
 import numpy as np
 import scipy as sp
-import KernelFunctions
 
 
 #### Worker Evaluation Wrappers ####
@@ -37,18 +36,18 @@ def worker_likelihood_hessian(theta,dat,mbs):
 # --- Each item in the inner list is an output from the worker-level evaluation functoin
 def eval_map_likelihood(xlist,num_workers):
     p = mp.Pool(num_workers) # Initialize parallel workers
-    res = p.starmap(worker_likelihood, xlist) # Evaluate in parallel
+    res = p.starmap(ef.consumer_likelihood_eval, xlist) # Evaluate in parallel
     p.close() # Close parallel workers
     return res
 
 def eval_map_likelihood_gradient(xlist,num_workers):
     p = mp.Pool(num_workers) # Initialize parallel workers
-    res = p.starmap(worker_likelihood_gradient, xlist) # Evaluate in parallel
+    res = p.starmap(ef.consumer_likelihood_eval_gradient, xlist) # Evaluate in parallel
     p.close() # Close parallel workers
     return res
 
 def eval_map_likelihood_hessian(xlist,num_workers):
     p = mp.Pool(num_workers) # Initialize parallel workers
-    res = p.starmap(worker_likelihood_hessian, xlist) # Evaluate in parallel
+    res = p.starmap(ef.consumer_likelihood_eval_hessian, xlist) # Evaluate in parallel
     p.close() # Close parallel workers
     return res

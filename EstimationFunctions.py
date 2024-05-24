@@ -258,7 +258,7 @@ def evaluate_likelihood(x,theta,clist,parallel=False,num_workers=0,model="base")
         if parallel:
             # Unpack previously estimated results
             dat= clist[i]['dat']
-            ll_i,q0_i,a_i = res[i]
+            ll_i,q0_i,a_i,itr = res[i]
         else:
             # Evaluate likelihood for consumer i 
             dat = clist[i]['dat']
@@ -413,12 +413,12 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
         if parallel:
             # Unpack previously estimated results
             dat= clist[i]['dat']
-            ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,sb_i,ab_i = res[i]
+            ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb_i,ab_i = res[i]
         else:
             # Evaluate likelihood for consumer i 
             dat = clist[i]['dat']
             mbs = clist[i]['mbs']       
-            ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb,ab  = consumer_likelihood_eval_hessian(theta,dat,mbs,model=model)
+            ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb_i,ab_i  = consumer_likelihood_eval_hessian(theta,dat,mbs,model=model)
 
 
         ll_micro += ll_i

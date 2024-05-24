@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 
-import cProfile
 import matplotlib.pyplot as plt
 import time 
 
@@ -12,7 +11,6 @@ from ModelFunctions import *
 from EstimationFunctions import *
 from ParallelFunctions import *
 from Derivatives import * 
-from NumericalDerivatives import *
 from CostEstFunctions import *
 from KernelFunctions import *
 
@@ -110,33 +108,33 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5.0])#, # Beta_x
 
 #### Run Timing Tests ####
 clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
-# print("Timing 2 Cores")
-# for i in range(5):
-#     start = time.perf_counter()
-#     res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
-#                                        parallel=True,num_workers=2)
-#     end = time.perf_counter()
-#     elapsed = end - start
-#     print(f'Elapsed Time: {elapsed:.6f} seconds')
-# 
-# print("Timing 4 Cores")
-# for i in range(5):
-#     start = time.perf_counter()
-#     res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
-#                                        parallel=True,num_workers=4)
-#     end = time.perf_counter()
-#     elapsed = end - start
-#     print(f'Elapsed Time: {elapsed:.6f} seconds')
-# 
-# 
-# print("Timing 8 Cores")
-# for i in range(5):
-#     start = time.perf_counter()
-#     res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
-#                                        parallel=True,num_workers=8)
-#     end = time.perf_counter()
-#     elapsed = end - start
-#     print(f'Elapsed Time: {elapsed:.6f} seconds')
+print("Timing 2 Cores")
+for i in range(5):
+    start = time.perf_counter()
+    res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
+                                       parallel=True,num_workers=2)
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f'Elapsed Time: {elapsed:.6f} seconds')
+
+print("Timing 4 Cores")
+for i in range(5):
+    start = time.perf_counter()
+    res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
+                                       parallel=True,num_workers=4)
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f'Elapsed Time: {elapsed:.6f} seconds')
+
+
+print("Timing 8 Cores")
+for i in range(5):
+    start = time.perf_counter()
+    res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
+                                       parallel=True,num_workers=8)
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f'Elapsed Time: {elapsed:.6f} seconds')
 
 
 print("Timing 16 Cores")
@@ -152,15 +150,15 @@ NUM_WORKERS = 16
 start_parameters = np.zeros(len(true_parameters))
 
 
-# print("Estimate in Parallel")
-# f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,parallel=True,num_workers=NUM_WORKERS,gtol=1e-4)
+print("Estimate in Parallel")
+f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,parallel=True,num_workers=NUM_WORKERS,gtol=1e-4)
 
 print("Estimate in Parallel with precondition")
 f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,parallel=True,num_workers=NUM_WORKERS,gtol=1e-4,pre_condition=True)
 
 
-# print("Estimate without parallel")
-# f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,parallel=False,gtol=1e-6,pre_condition=True)
+print("Estimate without parallel")
+f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,parallel=False,gtol=1e-6,pre_condition=True)
 
 
 

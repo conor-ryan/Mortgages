@@ -226,54 +226,53 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
 # mbsdf - MBS coupon price data frame
 # Outputs
 # ll - log likelihood 
-def evaluate_likelihood(x,theta,clist,model="base"):
+def evaluate_likelihood(x,theta,clist,parallel=False,num_workers=0,model="base"):
     # Print candidate parameter guess 
     # print("Parameters:", x)
     # Set parameters in the parameter object
     theta.set_demand(x)
-    # Initialize Aggregate Share Variables
-    # pred_N = np.zeros(len(theta.out_share))
-    # pred_N_out = np.zeros(len(theta.out_share))
-    # mkt_Obs = np.zeros(len(theta.out_share))
-    # q0_mkt = np.zeros(len(theta.out_share))
 
-    # ll_market = np.zeros(len(theta.out_share))
+    # Parallel estimation can only estimate the base model at the moment
+    if parallel and model!="base":
+        raise Exception("WARNING: non-base model specified in parallel. Parallel can only estimate base model.")
+    
+    # Initialize log likelihood tracking variables
     ll_micro = 0.0
-    # Initialize log likelihood and iteration count
-    ll = 0.0
-    itr_avg = 0
+    alpha_list = np.zeros(len(clist))
+    c_list_H = np.zeros(len(clist))
+    c_list_S = np.zeros(len(clist))
+    q0_list = np.zeros(len(clist))
 
-    N = len(clist)
-    alpha_list = np.zeros(N)
-    c_list_H = np.zeros(N)
-    c_list_S = np.zeros(N)
-    q0_list = np.zeros(N)
-    # Iterate over all consumers
-    for i in range(N):
-        # Subset data for consumer i
-        dat = clist[i]['dat']
-        mbs = clist[i]['mbs']
-        # Evaluate likelihood for consumer i 
-        ll_i,q0_i,a_i,itr = consumer_likelihood_eval(theta,dat,mbs,model=model)
-        # pred_N[dat.out] += w_i
-        # pred_N_out[dat.out] += q0_i*w_i
-        # q0_mkt[dat.out] +=q0_i
-        # Add contribution to total likelihood
-        # ll_market[dat.out] +=ll_i*w_i
+
+    ## Evaluate each consumer in parallel
+    if parallel: 
+        if num_workers<2:
+            raise Exception("Number of workers not set (or less than one) in parallel estimation")
+        args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
+        res = ParallelFunctions.eval_map_likelihood(args,num_workers)
+
+    # Iterate over all consumers to compute likelihood
+    for i in range(len(res)):
+        # Get consumer level results
+        if parallel:
+            # Unpack previously estimated results
+            dat= clist[i]['dat']
+            ll_i,q0_i,a_i = res[i]
+        else:
+            # Evaluate likelihood for consumer i 
+            dat = clist[i]['dat']
+            mbs = clist[i]['mbs']       
+            ll_i,q0_i,a_i,itr = consumer_likelihood_eval(theta,dat,mbs,model=model)
+        
         ll_micro += ll_i
         alpha_list[i] = a_i
         q0_list[i] = q0_i
         c_list_H[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZH)
         c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZS)
-        # Track iteration counts (for potential diagnostics)
-        itr_avg += max(itr,0)
-    
+
     # Combine Micro and Macro Likelihood Moments
     ll_macro = KernelFunctions.macro_likelihood(alpha_list,c_list_H,c_list_S,q0_list,theta)
     ll = ll_micro + ll_macro
-
-
-
     # Print and output likelihood value
     # print("Likelihood:",ll, "Macro Component:", ll_macro)
     return ll
@@ -288,61 +287,54 @@ def evaluate_likelihood(x,theta,clist,model="base"):
 # Outputs
 # ll - log likelihood 
 # dll - gradient of log likelihood 
-def evaluate_likelihood_gradient(x,theta,clist,model="base"):
+def evaluate_likelihood_gradient(x,theta,clist,parallel=False,num_workers=0,model="base"):
     # Print candidate parameter guess 
     # print("Parameters:", x)
     # Set parameters in the parameter object
-    theta.set_demand(x)   
+    theta.set_demand(x)
     K = len(theta.all())
 
-    # Initialize Aggregate Share Variables
-    # Necessary for matching outside option, and correcting selection into the sample
-    # Predicted outside option takeup
-    # pred_N_out = np.zeros(len(theta.out_share))
-    # Adaptive weights to correct selection and derivatives
-    # pred_N = np.zeros(len(theta.out_share))
-    # dpred_N = np.zeros((len(theta.out_share),K))
-    # mkt_Obs = np.zeros(len(theta.out_share))
-    # q0_mkt = np.zeros(len(theta.out_share))
-    # dq0_mkt = np.zeros((len(theta.out_share),K))
+    # Parallel estimation can only estimate the base model at the moment
+    if parallel and model!="base":
+        raise Exception("WARNING: non-base model specified in parallel. Parallel can only estimate base model.")
     
-    # Likelihood value per market (defined by outside option) and gradient 
-    # ll_market = np.zeros(len(theta.out_share))
-    # dll_market = np.zeros((len(theta.out_share),K))
 
+    # Initialize log likelihood tracking variables
     ll_micro = 0.0
     dll_micro = np.zeros(K)
 
-    N = len(clist)
-    alpha_list = np.zeros(N)
-    q0_list = np.zeros(N)
-    c_list_H = np.zeros(N)
-    c_list_S = np.zeros(N)
+    
+    alpha_list = np.zeros(len(clist))
+    q0_list = np.zeros(len(clist))
+    c_list_H = np.zeros(len(clist))
+    c_list_S = np.zeros(len(clist))
 
-    dalpha_list = np.zeros((N,K))
-    dq0_list = np.zeros((N,K))
+    dalpha_list = np.zeros((len(clist),K))
+    dq0_list = np.zeros((len(clist),K))
 
-    # Iterate over all consumers
-    for i in range(N):
-        # Subset data for consumer i
-        dat = clist[i]['dat']
-        mbs = clist[i]['mbs']
-        # Evaluate likelihood and gradient for consumer i 
-        ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i = consumer_likelihood_eval_gradient(theta,dat,mbs,model=model)
-        # Add outside option, probability weights, and derivatives
-        # pred_N[dat.out] += w_i
-        # pred_N_out[dat.out] += q0_i*w_i
-        # dpred_N[dat.out,:] += dw_i
-        # q0_mkt[dat.out] += q0_i
-        # dq0_mkt[dat.out,:] += dq0_i
-        # mkt_Obs[dat.out] +=1
-        # Add contribution to total likelihood, gradient and hessian (by outside option market)
-        # Derivatives need to account for the fact that the likelihood is weighted
-        # ll_market[dat.out] +=ll_i*w_i
-        # dll_market[dat.out,:] += dll_i*w_i + ll_i*dw_i
+
+    ## Evaluate each consumer in parallel
+    if parallel: 
+        if num_workers<2:
+            raise Exception("Number of workers not set (or less than one) in parallel estimation")
+        args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
+        res = ParallelFunctions.eval_map_likelihood_gradient(args,num_workers)
+
+    # Iterate over all consumers to compute likelihood
+    for i in range(len(res)):
+        # Get consumer level results
+        if parallel:
+            # Unpack previously estimated results
+            dat= clist[i]['dat']
+            ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i = res[i]
+        else:
+            # Evaluate likelihood for consumer i 
+            dat = clist[i]['dat']
+            mbs = clist[i]['mbs']       
+            ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i = consumer_likelihood_eval_gradient(theta,dat,mbs,model=model)
 
         ll_micro += ll_i
-        dll_micro += dll_i*(1-sb_i)
+        dll_micro += dll_i
 
         alpha_list[i] = a_i
         q0_list[i] = q0_i
@@ -350,40 +342,15 @@ def evaluate_likelihood_gradient(x,theta,clist,model="base"):
         c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZS)
 
         dalpha_list[i,:] = da_i
-        dq0_list[i,:] = dq0_i*(1-sb_i)
-
+        dq0_list[i,:] = dq0_i
     
     # Compute Macro Likelihood Component and Gradient
-    # pred_out_share = pred_N_out/pred_N # Predicted outside option share
-    # pred_out_share = q0_mkt/mkt_Obs*(1-theta.out_share) + theta.out_share*(pred_N_out/pred_N)
-    # ll_macro = np.sum(theta.N*(theta.out_share*np.log(pred_out_share)))
-    # # Initialize objects to hold gradient
-    # dll_macro = np.zeros(K)
-    # # Sum across the outside option markets
-    # for i in range(len(theta.out_share)):
-    #     # Gradient of the log-weighted-outside option
-    #     # d_log_out = dpred_N[i,:]*(1/pred_N_out[i] - 1/pred_N[i])
-    #     d_log_out = (1/pred_out_share[i])*(1-theta.out_share[i])*dq0_mkt[i,:]/mkt_Obs[i] + theta.out_share[i]*dpred_N[i,:]/pred_N[i]*(1 - pred_N_out[i]/pred_N[i])
-    #     # Weight by actual population size in macro component
-    #     dll_macro += theta.N[i]*(theta.out_share[i]*d_log_out)
-
-    # Compute total log likelihood
     ll_macro, dll_macro = KernelFunctions.macro_likelihood_grad(alpha_list,c_list_H,c_list_S,q0_list,
                                                                 dalpha_list,dq0_list,theta)
-    # Micro-likelihood is renormalized by sum of the weights, then weighted by actual population
-    # ll = np.sum(theta.N*(1-theta.out_share)*ll_market/pred_N) + ll_macro
-    ll = ll_micro + ll_macro
-    
-    # Initialize log likelihood gradient 
-    # dll = dll_macro # Start with macro component
-    # # Sum across outside option markets
-    # for i in range(len(theta.out_share)):
-    #     # Gradient of the micro-log likelihood
-    #     dll += theta.N[i]*(1-theta.out_share[i])*(dll_market[i,:]/pred_N[i] +\
-    #             - dpred_N[i,:]*ll_market[i]/pred_N[i]**2) 
 
+    ll = ll_micro + ll_macro
     dll = dll_micro + dll_macro
-        
+
     # Print and output likelihood value
     # print("Likelihood:",ll, "Macro Component:", ll_macro)
     return ll, dll
@@ -399,68 +366,58 @@ def evaluate_likelihood_gradient(x,theta,clist,model="base"):
 # ll - log likelihood 
 # dll - gradient of log likelihood 
 # d2ll - hessian of log likelihood 
-def evaluate_likelihood_hessian(x,theta,clist,model="base",**kwargs):
+def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model="base",**kwargs):
     # Print candidate parameter guess 
     # print("Parameters:", x)
     # Set parameters in the parameter object
     theta.set_demand(x)
     K = len(theta.all())
-    N = len(clist)
-    # Initialize Aggregate Share Variables
-    # Necessary for matching outside option, and correcting selection into the sample
-    # Predicted outside option takeup
-    # pred_N_out = np.zeros(len(theta.out_share))
-    # Adaptive weights to correct selection and derivatives
-    # pred_N = np.zeros(len(theta.out_share))
-    # dpred_N = np.zeros((len(theta.out_share),K))
-    # d2pred_N = np.zeros((len(theta.out_share),K,K))
-    # mkt_Obs = np.zeros(len(theta.out_share))
-    # q0_mkt = np.zeros(len(theta.out_share))
-    # dq0_mkt = np.zeros((len(theta.out_share),K))
-    # d2q0_mkt = np.zeros((len(theta.out_share),K))
-    # Likelihood value per market (defined by outside option) and gradient 
-    # ll_market = np.zeros(len(theta.out_share))
-    # dll_market = np.zeros((len(theta.out_share),K))
-    # d2ll_market = np.zeros((len(theta.out_share),K,K))
 
+    # Parallel estimation can only estimate the base model at the moment
+    if parallel and model!="base":
+        raise Exception("WARNING: non-base model specified in parallel. Parallel can only estimate base model.")
+    
+
+    sbound_mean = np.zeros(len(clist))
+    abound_mean = np.zeros(len(clist))
+    ll_test_vec = np.zeros(len(clist))
+
+    # Initialize log likelihood tracking variables
     ll_micro = 0.0
     dll_micro = np.zeros(K)
     d2ll_micro = np.zeros((K,K))
 
     
-    alpha_list = np.zeros(N)
-    q0_list = np.zeros(N)
-    c_list_H = np.zeros(N)
-    c_list_S = np.zeros(N)
+    alpha_list = np.zeros(len(clist))
+    q0_list = np.zeros(len(clist))
+    c_list_H = np.zeros(len(clist))
+    c_list_S = np.zeros(len(clist))
 
-    dalpha_list = np.zeros((N,K))
-    dq0_list = np.zeros((N,K))
+    dalpha_list = np.zeros((len(clist),K))
+    dq0_list = np.zeros((len(clist),K))
     
-    d2q0_list = np.zeros((N,K,K))
-    d2alpha_list = np.zeros((N,K,K))
+    d2q0_list = np.zeros((len(clist),K,K))
+    
+        ## Evaluate each consumer in parallel
+    if parallel: 
+        if num_workers<2:
+            raise Exception("Number of workers not set (or less than one) in parallel estimation")
+        args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
+        res = ParallelFunctions.eval_map_likelihood_hessian(args,num_workers)
 
-    
-    # Iterate over all consumers
-    for i in range(N):
-        # Subset data for consumer i
-        dat = clist[i]['dat']
-        mbs = clist[i]['mbs']
-        # Evaluate likelihood, gradient, and hessian for consumer i 
-        ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb,ab  = consumer_likelihood_eval_hessian(theta,dat,mbs,model=model)
-        # Add outside option, probability weights, and derivatives
-        # pred_N_out[dat.out] += q0_i*w_i
-        # pred_N[dat.out] += w_i
-        # dpred_N[dat.out,:] += dw_i
-        # d2pred_N[dat.out,:,:] += d2w_i
-        # q0_mkt[dat.out] += q0_i
-        # dq0_mkt[dat.out,:] += dq0_i
-        # d2q0_mkt[dat.out,:,:] += dq0_i
-        # mkt_Obs[dat.out] +=1
-        # Add contribution to total likelihood, gradient and hessian (by outside option market)
-        # Derivatives need to account for the fact that the likelihood is weighted
-        # ll_market[dat.out] +=ll_i*w_i
-        # dll_market[dat.out,:] += dll_i*w_i + ll_i*dw_i
-        # d2ll_market[dat.out,:,:] += d2ll_i*w_i + ll_i*d2w_i + np.outer(dll_i,dw_i) + np.outer(dw_i,dll_i)
+    # Iterate over all consumers to compute likelihood
+    for i in range(len(res)):
+        # Get consumer level results
+        if parallel:
+            # Unpack previously estimated results
+            dat= clist[i]['dat']
+            ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,sb_i,ab_i = res[i]
+        else:
+            # Evaluate likelihood for consumer i 
+            dat = clist[i]['dat']
+            mbs = clist[i]['mbs']       
+            ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb,ab  = consumer_likelihood_eval_hessian(theta,dat,mbs,model=model)
+
 
         ll_micro += ll_i
         dll_micro += dll_i
@@ -475,57 +432,23 @@ def evaluate_likelihood_hessian(x,theta,clist,model="base",**kwargs):
         dq0_list[i,:] = dq0_i
 
         d2q0_list[i,:,:] = d2q0_i
-        d2alpha_list[i,:,:] = d2a_i
 
-    
-    # Compute Macro Likelihood Component and Gradient
-    # pred_out_share = pred_N_out/pred_N # Predicted outside option share
-    # pred_out_share = q0_mkt/mkt_Obs*(1-theta.out_share) + theta.out_share*(pred_N_out/pred_N)
-    # ll_macro = np.sum(theta.N*(theta.out_share*np.log(pred_out_share)))
-    # # Initialize objects to hold gradient and hessian
-    # dll_macro = np.zeros(K)
-    # d2ll_macro = np.zeros((K,K))
-    # # Sum across the outside option markets
-    # for i in range(len(theta.out_share)):
-    #     # Gradient of the log-weighted-outside option
-    #     # d_log_out = dpred_N[i,:]*(1/pred_N_out[i] - 1/pred_N[i])
-    #     d_log_out = (1/pred_out_share[i])*(1-theta.out_share[i])*dq0_mkt[i,:]/mkt_Obs[i] + theta.out_share[i]*dpred_N[i,:]/pred_N[i]*(1 - pred_N_out[i]/pred_N[i])
-    #     # Weight by actual population size in macro component
-    #     dll_macro += theta.N[i]*(theta.out_share[i]*d_log_out)
+        sbound_mean[i] = sb_i
+        abound_mean[i] = ab_i
+        ll_test_vec[i] = ll_i
 
-    #     # Hessian of log-weighted-outside option 
-    #     d2_log_out = d2pred_N[i,:,:]*(1/pred_N_out[i] - 1/pred_N[i]) - np.outer(dpred_N[i,:],dpred_N[i,:])*(1/pred_N_out[i]**2 - 1/pred_N[i]**2) 
-    #     # Weight by actual population size in macro component
-    #     d2ll_macro += theta.N[i]*(theta.out_share[i]*d2_log_out)
-
-    # Compute total log likelihood
     ll_macro, dll_macro, d2ll_macro,BFGS_next = KernelFunctions.macro_likelihood_hess(alpha_list,c_list_H,c_list_S,q0_list,
                                                                                       dalpha_list,dq0_list,d2q0_list,theta,BFGS_prior=kwargs.get("BFGS_prior"))
-    # Micro-likelihood is renormalized by sum of the weights, then weighted by actual population
-    # ll = np.sum(theta.N*(1-theta.out_share)*ll_market/pred_N) + ll_macro
     ll = ll_micro + ll_macro
-    # Initialize log likelihood gradient, hessian 
-    # dll = dll_macro # Start with macro component
-    # d2ll = d2ll_macro # Start with macro component
-    # # Sum across outside option markets
-    # for i in range(len(theta.out_share)):
-    #     # Gradient of the micro-log likelihood
-    #     dll += theta.N[i]*(1-theta.out_share[i])*(dll_market[i,:]/pred_N[i] +\
-    #             - dpred_N[i,:]*ll_market[i]/pred_N[i]**2) 
-    #     # Hessian of the micro-log likeliood
-    #     d2ll += theta.N[i]*(1-theta.out_share[i])*(
-    #         d2ll_market[i,:,:]/pred_N[i] +\
-    #         -np.outer(dll_market[i,:],dpred_N[i,:])/pred_N[i]**2 +\
-    #         -np.outer(dpred_N[i,:],dll_market[i,:])/pred_N[i]**2 + \
-    #         -d2pred_N[i,:,:]*ll_market[i]/pred_N[i]**2 +\
-    #         2*np.outer(dpred_N[i,:],dpred_N[i,:])*ll_market[i]/pred_N[i]**3
-    #         ) 
-
     dll = dll_micro + dll_macro
     d2ll = d2ll_micro + d2ll_macro
 
     # Print and output likelihood value
     # print("Likelihood:",ll, "Macro ll component:", ll_macro)
+    if np.sum(sbound_mean)>0:
+        ll_component = np.sum(ll_test_vec[sbound_mean==1])
+        print("Fraction on Share Bound",np.mean(sbound_mean),ll_component)
+    print("Fraction below Alpha Bound",np.mean(abound_mean))
     return ll, dll, d2ll, BFGS_next
 
 ##### Optimization Functions to Maximize Likelihood and Estimate Parameters #######
@@ -553,28 +476,18 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,
     # Create list of consumer data (could be memory issue, duplicating data)
     clist = consumer_object_list(theta,cdf,mdf,mbsdf)
 
-    # Setup the Parallel or Serial objective functions
-    if parallel:
-        # Exit if number of workers hasn't been specified
-        if num_workers<2:
-            print("ERROR: Number of workers has not been specified (or is fewer than 2)")
-            return None, x
+    # Exit if number of workers hasn't been specified
+    if parallel and (num_workers<2):
+        print("ERROR: Number of workers has not been specified (or is fewer than 2)")
+        return None, x
 
-        if pre_condition:
-            print("Run Gradient Ascent to pre-condition:")
-            ll_pre,x = estimate_GA(x,theta,clist,parallel=True,num_workers=num_workers,itr_max=pre_cond_itr)
+    if pre_condition:
+        print("Run Gradient Ascent to pre-condition:")
+        ll_pre,x = estimate_GA(x,theta,clist,
+                               parallel=parallel,
+                               num_workers=num_workers,
+                               itr_max=pre_cond_itr)
 
-        def f_hess(x):
-            return ParallelFunctions.evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers)
-    
-    else:
-        if pre_condition:
-            print("Run Gradient Ascent to pre-condition:")
-            ll_pre,x = estimate_GA(x,theta,clist,parallel=False,itr_max=pre_cond_itr)
-
-        def f_hess(x):
-            return evaluate_likelihood_hessian(x,theta,clist)
-    
     # Set candidate vector in parameter object
     theta.set_demand(x)  
 
@@ -584,7 +497,9 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,
     # Initialize "new" candidate parameter vector
     x_new = np.copy(x)
     # Intitial evaluation of likelihood, gradient (f_k), and hessian (B_k)
-    ll_k, f_k, B_k,bfgs_mem = f_hess(x)
+    ll_k, f_k, B_k,bfgs_mem = evaluate_likelihood_hessian(x,theta,clist,
+                                                          parallel=parallel,
+                                                          num_workers=num_workers)
     # Translate Hessian into a negative definite matrix for best ascent 
     # Also raises a warning when Hessian is not negitive definite, bad sign if it happens near convergence
     B_k = enforceNegDef(B_k[np.ix_(test_index,test_index)])
@@ -649,7 +564,10 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,
         print("Parameter Guess:",x_new)
 
         # Recompute likelihood, gradient and hessian
-        ll_new, f_new, B_new, bfgs_mem_new = f_hess(x_new)
+        ll_new, f_new, B_new, bfgs_mem_new = evaluate_likelihood_hessian(x_new,theta,clist,
+                                                                         parallel=parallel,
+                                                                         num_workers=num_workers,
+                                                                         BFGS_prior=bfgs_mem)
         
         # If the initial step leads to a much lower likelihood value
         # shrink the step size to search for a better step.
@@ -661,13 +579,19 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,
             print("Line Search Step Size:",alpha) # Print step size for search
             s_k = alpha*p_k # Compute new step size
             x_new[test_index] = x[test_index] + s_k # Update new candidate parameter vector
-
-            ll_new, f_new, B_new, bfgs_mem_new = f_hess(x_new) # Check new value of the likelihood function
+            
+            # Check new value of the likelihood function
+            ll_new = evaluate_likelihood(x_new,theta,clist,
+                                            parallel=parallel,
+                                            num_workers=num_workers)
+            
             if (alpha<1e-3) & (attempt_gradient_step==0):
                 stall_count +=1
                 attempt_gradient_step = 1
                 print("#### Begin Gradient Ascent")
-                ll_new,x_new = estimate_GA(x,theta,clist,parallel=parallel,num_workers=num_workers,itr_max=pre_cond_itr)
+                ll_new,x_new = estimate_GA(x,theta,clist,parallel=parallel,
+                                           num_workers=num_workers,
+                                           itr_max=pre_cond_itr)
             elif (attempt_gradient_step==1):
                 print("#### No Better Point Found")
                 return ll_best, x_best
@@ -693,7 +617,10 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,
             bfgs_mem = bfgs_mem_new
         # If there was a line search, need to evaluate the hessian again
         else:
-            ll_k, f_k, B_k, bfgs_mem = f_hess(x)
+            ll_k, f_k, B_k, bfgs_mem = evaluate_likelihood_hessian(x,theta,clist,
+                                                                    parallel=parallel,
+                                                                    num_workers=num_workers,
+                                                                    BFGS_prior=bfgs_mem)
 
         # Check that the hessian is negative definite and enforce it if necessary
         B_k = enforceNegDef(B_k[np.ix_(test_index,test_index)])
@@ -734,18 +661,11 @@ def estimate_GA(x,theta,clist,parallel=False,num_workers=0,gtol=1e-6,xtol=1e-15,
     test_index = theta.beta_x_ind
 
     # Setup the Parallel or Serial objective functions
-    if parallel:
-        # Exit if number of workers hasn't been specified
-        if num_workers<2:
-            print("GRADIENT ASCENT PARALLEL ERROR: Number of workers has not been specified (or is fewer than 2)")
-            return None, None
+    if parallel and (num_workers<2):
+        raise Exception("GRADIENT ASCENT PARALLEL ERROR: Number of workers has not been specified (or is fewer than 2)")
 
-        def f_grad(x):
-            return ParallelFunctions.evaluate_likelihood_gradient_parallel(x,theta,clist,num_workers)
-    
-    else:
-        def f_grad(x):
-            return evaluate_likelihood_gradient(x,theta,clist)
+    def f_grad(x):
+        return evaluate_likelihood_gradient(x,theta,clist,parallel=parallel,num_workers=num_workers)
     
 
 

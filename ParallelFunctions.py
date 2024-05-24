@@ -14,16 +14,16 @@ import KernelFunctions
 # list_object - an item in the consumer object list
 ## Outputs
 # Same as the associated consumer likelihood evaluation function (without iteration count)
-def worker_likelihood(theta,dat,mbs,model="base"):
-    ll_i,q0_i,a_i,itr  = ef.consumer_likelihood_eval(theta,dat,mbs,model=model)
+def worker_likelihood(theta,dat,mbs):
+    ll_i,q0_i,a_i,itr  = ef.consumer_likelihood_eval(theta,dat,mbs)
     return ll_i,q0_i,a_i
 
-def worker_likelihood_gradient(theta,dat,mbs,model="base"):
-    ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i   = ef.consumer_likelihood_eval_gradient(theta,dat,mbs,model=model)
+def worker_likelihood_gradient(theta,dat,mbs):
+    ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i   = ef.consumer_likelihood_eval_gradient(theta,dat,mbs)
     return ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i 
 
-def worker_likelihood_hessian(theta,dat,mbs,model="base"):
-    ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb_i,ab_i   = ef.consumer_likelihood_eval_hessian(theta,dat,mbs,model=model)
+def worker_likelihood_hessian(theta,dat,mbs):
+    ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb_i,ab_i   = ef.consumer_likelihood_eval_hessian(theta,dat,mbs)
     return ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,sb_i,ab_i
 
 #### Parallel Mapping Functions ####
@@ -35,21 +35,21 @@ def worker_likelihood_hessian(theta,dat,mbs,model="base"):
 # res - a list of lists. 
 # --- Each item in the outer list is a consumer
 # --- Each item in the inner list is an output from the worker-level evaluation functoin
-def eval_map_likelihood(xlist,num_workers,model="base"):
+def eval_map_likelihood(xlist,num_workers):
     p = mp.Pool(num_workers) # Initialize parallel workers
-    res = p.starmap(worker_likelihood, xlist,model=model) # Evaluate in parallel
+    res = p.starmap(worker_likelihood, xlist) # Evaluate in parallel
     p.close() # Close parallel workers
     return res
 
-def eval_map_likelihood_gradient(xlist,num_workers,model="base"):
+def eval_map_likelihood_gradient(xlist,num_workers):
     p = mp.Pool(num_workers) # Initialize parallel workers
-    res = p.starmap(worker_likelihood_gradient, xlist,model=model) # Evaluate in parallel
+    res = p.starmap(worker_likelihood_gradient, xlist) # Evaluate in parallel
     p.close() # Close parallel workers
     return res
 
-def eval_map_likelihood_hessian(xlist,num_workers,model="base"):
+def eval_map_likelihood_hessian(xlist,num_workers):
     p = mp.Pool(num_workers) # Initialize parallel workers
-    res = p.starmap(worker_likelihood_hessian, xlist,model=model) # Evaluate in parallel
+    res = p.starmap(worker_likelihood_hessian, xlist) # Evaluate in parallel
     p.close() # Close parallel workers
     return res
 
@@ -65,13 +65,15 @@ def eval_map_likelihood_hessian(xlist,num_workers,model="base"):
 # num_workers - threads to use in parallel
 # Outputs
 # ll - log likelihood 
-def evaluate_likelihood_parallel(x,theta,clist,num_workers):
+def evaluate_likelihood_parallel(x,theta,clist,parallel=False,num_workers=0,model="base"):
     # Print candidate parameter guess 
     # print("Parameters:", x)
     # Set parameters in the parameter object
     theta.set_demand(x)
 
-
+    # Parallel estimation can only estimate the base model at the moment
+    if parallel and model!="base":
+        raise Exception("WARNING: non-base model specified in parallel. Parallel can only estimate base model.")
     
     # Initialize log likelihood tracking variables
     ll_micro = 0.0
@@ -81,15 +83,25 @@ def evaluate_likelihood_parallel(x,theta,clist,num_workers):
     q0_list = np.zeros(len(clist))
 
 
-    ## Evaluate each consumer in parallel 
-    args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
-    res = eval_map_likelihood(args,num_workers)
+    ## Evaluate each consumer in parallel
+    if parallel: 
+        if num_workers<2:
+            raise Exception("Number of workers not set (or less than one) in parallel estimation")
+        args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
+        res = eval_map_likelihood(args,num_workers)
 
     # Iterate over all consumers to compute likelihood
     for i in range(len(res)):
-        # Unpack parallel results
-        dat= clist[i]['dat']
-        ll_i,q0_i,a_i = res[i]
+        # Get consumer level results
+        if parallel:
+            # Unpack previously estimated results
+            dat= clist[i]['dat']
+            ll_i,q0_i,a_i = res[i]
+        else:
+            # Evaluate likelihood for consumer i 
+            dat = clist[i]['dat']
+            mbs = clist[i]['mbs']       
+            ll_i,q0_i,a_i,itr = consumer_likelihood_eval(theta,dat,mbs,model=model)
         
         ll_micro += ll_i
         alpha_list[i] = a_i
@@ -113,12 +125,17 @@ def evaluate_likelihood_parallel(x,theta,clist,num_workers):
 # Outputs
 # ll - log likelihood 
 # dll - gradient of log likelihood 
-def evaluate_likelihood_gradient_parallel(x,theta,clist,num_workers):
+def evaluate_likelihood_gradient_parallel(x,theta,clist,parallel=False,num_workers=0,model="base"):
     # Print candidate parameter guess 
     # print("Parameters:", x)
     # Set parameters in the parameter object
     theta.set_demand(x)
     K = len(theta.all())
+
+    # Parallel estimation can only estimate the base model at the moment
+    if parallel and model!="base":
+        raise Exception("WARNING: non-base model specified in parallel. Parallel can only estimate base model.")
+    
 
     # Initialize log likelihood tracking variables
     ll_micro = 0.0
@@ -134,15 +151,25 @@ def evaluate_likelihood_gradient_parallel(x,theta,clist,num_workers):
     dq0_list = np.zeros((len(clist),K))
 
 
-    ## Evaluate each consumer in parallel 
-    args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
-    res = eval_map_likelihood_gradient(args,num_workers)
+    ## Evaluate each consumer in parallel
+    if parallel: 
+        if num_workers<2:
+            raise Exception("Number of workers not set (or less than one) in parallel estimation")
+        args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
+        res = eval_map_likelihood_gradient(args,num_workers)
 
     # Iterate over all consumers to compute likelihood
     for i in range(len(res)):
-        # Unpack parallel results
-        dat= clist[i]['dat']
-        ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i = res[i]
+            # Get consumer level results
+        if parallel:
+            # Unpack previously estimated results
+            dat= clist[i]['dat']
+            ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i = res[i]
+        else:
+            # Evaluate likelihood for consumer i 
+            dat = clist[i]['dat']
+            mbs = clist[i]['mbs']       
+            ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i = consumer_likelihood_eval_gradient(theta,dat,mbs,model=model)
 
         ll_micro += ll_i
         dll_micro += dll_i
@@ -176,12 +203,17 @@ def evaluate_likelihood_gradient_parallel(x,theta,clist,num_workers):
 # ll - log likelihood 
 # dll - gradient of log likelihood 
 # d2ll - hessian of log likelihood 
-def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
+def evaluate_likelihood_hessian_parallel(x,theta,clist,parallel=False,num_workers=0,model="base",**kwargs):
     # Print candidate parameter guess 
     # print("Parameters:", x)
     # Set parameters in the parameter object
     theta.set_demand(x)
     K = len(theta.all())
+
+    # Parallel estimation can only estimate the base model at the moment
+    if parallel and model!="base":
+        raise Exception("WARNING: non-base model specified in parallel. Parallel can only estimate base model.")
+    
 
     sbound_mean = np.zeros(len(clist))
     abound_mean = np.zeros(len(clist))
@@ -203,15 +235,26 @@ def evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers,**kwargs):
     
     d2q0_list = np.zeros((len(clist),K,K))
     
-    ## Evaluate each consumer in parallel 
-    args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
-    res = eval_map_likelihood_hessian(args,num_workers)
+        ## Evaluate each consumer in parallel
+    if parallel: 
+        if num_workers<2:
+            raise Exception("Number of workers not set (or less than one) in parallel estimation")
+        args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
+        res = eval_map_likelihood_hessian(args,num_workers)
 
     # Iterate over all consumers to compute likelihood
     for i in range(len(res)):
-        # Unpack parallel results
-        dat= clist[i]['dat']
-        ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,sb_i,ab_i = res[i]
+        # Get consumer level results
+        if parallel:
+            # Unpack previously estimated results
+            dat= clist[i]['dat']
+            ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,sb_i,ab_i = res[i]
+        else:
+            # Evaluate likelihood for consumer i 
+            dat = clist[i]['dat']
+            mbs = clist[i]['mbs']       
+            ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb,ab  = consumer_likelihood_eval_hessian(theta,dat,mbs,model=model)
+
 
         ll_micro += ll_i
         dll_micro += dll_i

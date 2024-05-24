@@ -531,7 +531,10 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
 # Outputs
 # ll_k - maximized likelihood
 # x - estimated parameter vector 
-def estimate_NR(x,theta,cdf,mdf,mbsdf,parallel=False,num_workers=0,gtol=1e-6,xtol=1e-12):
+def estimate_NR(x,theta,cdf,mdf,mbsdf,
+                parallel=False,num_workers=0,
+                gtol=1e-6,xtol=1e-12,
+                pre_condition=False,pre_cond_itr=10):
     # Testing Tool: A index of parameters to estimate while holding others constant
     # This can help identification. range(0,len(x)) will estimate all parameters 
     test_index = theta.beta_x_ind
@@ -545,10 +548,18 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,parallel=False,num_workers=0,gtol=1e-6,xto
         # Create list of consumer data (could be memory issue, duplicating data)
         clist = ParallelFunctions.consumer_object_list(theta,cdf,mdf,mbsdf)
 
+        if pre_condition:
+            print("Run Gradient Ascent to pre-condition:")
+            ll_pre,x = estimate_GA(x,theta,(clist,),parallel=True,num_workers=num_workers,itr_max=pre_cond_itr)
+
         def f_hess(x):
             return ParallelFunctions.evaluate_likelihood_hessian_parallel(x,theta,clist,num_workers)
     
     else:
+        if pre_condition:
+            print("Run Gradient Ascent to pre-condition:")
+            ll_pre,x = estimate_GA(x,theta,(cdf,mdf,mbsdf),parallel=False,itr_max=pre_cond_itr)
+
         def f_hess(x):
             return evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf)
     
@@ -596,6 +607,7 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,parallel=False,num_workers=0,gtol=1e-6,xto
 
         # If we have been behind the best for long, use a more strict search
         if (backward_tracker>1):
+            stall_count +=1
             allowance = 1.00
             # Return to values at best evaluation
             ll_k = np.copy(ll_best)
@@ -655,6 +667,7 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,parallel=False,num_workers=0,gtol=1e-6,xto
             err = np.mean(np.sqrt(f_best[test_index]**2))
             print("Completed with Error", err, "at Function Value",ll_best)
             return ll_best, x_best
+        
         if (line_search == 0) & (backward_tracker==0):
             stall_count = 0
                 

@@ -226,10 +226,6 @@ f, g1 = out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
                         da_mkt,dq0_mkt,out_share,theta)
 
 
-f, g2 = out_share_gradient_WH(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
-                        da_mkt,dq0_mkt,
-                        d2a_mkt,d2q0_mkt,out_share,theta)
-
 
 test = np.zeros(len(a_mkt))
 for i in range(len(a_mkt)):
@@ -381,8 +377,8 @@ test = np.array([31.26264496, 31.04771438, 30.7065461,  30.73619066, 31.11616083
 # 193, 247, 385, 524, 541
 error = np.zeros((consumer_data.shape[0],2))
 # for i in range(consumer_data.shape[0]):
-i = 120
-# i = 98, 120, 226, 269
+i = 123
+# i = 98, 120, 226, 269,181
 # test = np.copy(res)
 # test[0] = test[0] + 1e-6
 theta.set_demand(res)

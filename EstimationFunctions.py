@@ -529,7 +529,7 @@ def evaluate_likelihood_hessian(x,theta,cdf,mdf,mbsdf,model="base",**kwargs):
 # Outputs
 # ll_k - maximized likelihood
 # x - estimated parameter vector 
-def estimate_NR(x,theta,cdf,mdf,mbsdf):
+def estimate_NR(x,theta,cdf,mdf,mbsdf,gtol=1e-6):
     # Testing Tool: A index of parameters to estimate while holding others constant
     # This can help identification. range(0,len(x)) will estimate all parameters 
     test_index = theta.beta_x_ind
@@ -548,7 +548,7 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf):
     err = 1
     itr = 0
     # Iterate while error exceeds tolerance
-    while err>1e-6 and itr<1000:
+    while err>gtol:
         # Compute newton step
         p_k = -np.dot(np.linalg.inv(B_k),f_k[test_index])
         # Initial line search value: full newton step

@@ -112,7 +112,7 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5.0])#, # Beta_x
 
 
 
-clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
+# clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 
 # print("Timing 2 Cores")
 # for i in range(5):
@@ -148,10 +148,13 @@ clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 #     elapsed = end - start
 #     print(f'Elapsed Time: {elapsed:.6f} seconds')
 
-
-
+print("Estimate in Parallel")
 NUM_WORKERS = 16
 f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,NUM_WORKERS,gtol=1e-5,xtol=1e-15)
+
+print("Estimate without parallel")
+f_val, res = estimate_NR(true_parameters,theta,consumer_data,market_data,mbs_data,gtol=1e-6)
+
 
 
 print("Test Numerical Derivative At Optimum")

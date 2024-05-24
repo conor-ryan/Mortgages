@@ -113,7 +113,8 @@ clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 # print("Timing 2 Cores")
 # for i in range(5):
 #     start = time.perf_counter()
-#     res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,2)
+#     res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
+#                                        parallel=True,num_workers=2)
 #     end = time.perf_counter()
 #     elapsed = end - start
 #     print(f'Elapsed Time: {elapsed:.6f} seconds')
@@ -121,7 +122,8 @@ clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 # print("Timing 4 Cores")
 # for i in range(5):
 #     start = time.perf_counter()
-#     res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,4)
+#     res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
+#                                        parallel=True,num_workers=4)
 #     end = time.perf_counter()
 #     elapsed = end - start
 #     print(f'Elapsed Time: {elapsed:.6f} seconds')
@@ -130,7 +132,8 @@ clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 print("Timing 8 Cores")
 for i in range(5):
     start = time.perf_counter()
-    res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,8)
+    res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
+                                       parallel=True,num_workers=8)
     end = time.perf_counter()
     elapsed = end - start
     print(f'Elapsed Time: {elapsed:.6f} seconds')
@@ -139,7 +142,8 @@ for i in range(5):
 print("Timing 16 Cores")
 for i in range(5):
     start = time.perf_counter()
-    res =  evaluate_likelihood_hessian_parallel(true_parameters,theta,clist,16)
+    res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
+                                       parallel=True,num_workers=16)
     end = time.perf_counter()
     elapsed = end - start
     print(f'Elapsed Time: {elapsed:.6f} seconds')

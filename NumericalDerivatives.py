@@ -3,6 +3,7 @@ import EquilibriumFunctions
 import EstimationFunctions
 import ParallelFunctions
 from Derivatives import *
+# import TestConditionalFunctions
 
 def deriv_test_endo(d,theta,m):
     vec = theta.all()
@@ -400,13 +401,14 @@ def deriv_test_cons_ll(vec,theta,d,m):
     grad = np.zeros(len(vec))
     eps = 1e-10
     theta.set_demand(vec)
-    f0, x1, x2, x3, x4, x5, x6 = EstimationFunctions.consumer_likelihood_eval_gradient(theta,d,m)
+    # f0, x1, x2, x3, x4, x5, x6 = EstimationFunctions.consumer_likelihood_eval_gradient(theta,d,m)
+    f0 = TestConditionalFunctions.ll_test_function(theta,d,m)
     for i in range(len(vec)):
         vec_new = np.copy(vec)
         vec_new[i] = vec[i] + eps
         theta.set_demand(vec_new)
-        f1, x0, x2, x3, x4, x5, x6 = EstimationFunctions.consumer_likelihood_eval_gradient(theta,d,m)
-
+        # f1, x0, x2, x3, x4, x5, x6 = EstimationFunctions.consumer_likelihood_eval_gradient(theta,d,m)
+        f1 = TestConditionalFunctions.ll_test_function(theta,d,m)
         der = (f1-f0)/(eps)
         grad[i] = der        
         theta.set_demand(vec)

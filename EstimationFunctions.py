@@ -89,8 +89,10 @@ def consumer_likelihood_eval(theta,d,m,model="base"):
  
     #Compute market shares
     q = ModelFunctions.market_shares(r_eq,alpha,d,theta)
+    q_cond = ModelFunctions.conditional_shares(r_eq,alpha,d,theta)
     # Compute likelihood contribution
-    ll_i = np.log(q[d.lender_obs]) - np.log(np.sum(q))
+    ll_i = np.log(q_cond[d.lender_obs])
+    # ll_i = np.log(q[d.lender_obs]) - np.log(np.sum(q))
     # Compute macro likelihood contribution
     q0 = 1- np.sum(q) # Probability of selecting outside option
 
@@ -122,8 +124,10 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
 
     # Compute market shares
     q,sb = ModelFunctions.market_shares(r_eq,alpha,d,theta,return_bound=True)
+    q_cond = ModelFunctions.conditional_shares(r_eq,alpha,d,theta)
     # Compute likelihood contribution
-    ll_i = np.log(q[d.lender_obs]) - np.log(np.sum(q))
+    ll_i = np.log(q_cond[d.lender_obs])
+    # ll_i = np.log(q[d.lender_obs]) - np.log(np.sum(q))
     # Compute macro likelihood contribution
     q0 = 1- np.sum(q) # Probability of selecting outside option
 
@@ -174,8 +178,10 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
 
     # Compute market shares
     q,sb = ModelFunctions.market_shares(r_eq,alpha,d,theta,return_bound=True)
+    q_cond = ModelFunctions.conditional_shares(r_eq,alpha,d,theta)
     # Compute likelihood contribution
-    ll_i = np.log(q[d.lender_obs])- np.log(np.sum(q))
+    ll_i = np.log(q_cond[d.lender_obs])
+    # ll_i = np.log(q[d.lender_obs]) - np.log(np.sum(q))
     # Compute macro likelihood contribution
     q0 = 1- np.sum(q) # Probability of selecting outside option
     

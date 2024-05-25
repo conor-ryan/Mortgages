@@ -16,6 +16,7 @@ from Derivatives import *
 from NumericalDerivatives import *
 from CostEstFunctions import *
 from KernelFunctions import *
+from TestConditionalFunctions import *
 
 # File with Loan-Level Data
 consumer_data_file = "consumer_data_sim.csv"
@@ -403,9 +404,14 @@ alpha, r, itr, f = solve_eq_r_optim(r0,j,d,theta,m)
 q =  market_shares(r,alpha,d,theta)
 print(alpha,r,1-sum(q))
 print(consumer_likelihood_eval(theta,d,m))
+print(ll_test_function(theta,d,m))
 
-r2, itr2 = solve_eq(-150,d,theta,m)
-alpha, r, itr, f = solve_eq_r_optim(r2[j]+1e-6,j,d,theta,m)
+dlogq1, d2logq1, dq01,d2q01, da1,d2a1  =share_parameter_second_derivatives(r,alpha,d,theta,m)
+q0 = 1-np.sum(q)
+dlogq2, d2logq2, dq02,d2q02, da2,d2a2  =conditional_parameter_second_derivatives(r,alpha,d,theta,m)
+
+t1 = dlogq1[:,j] + dq01/(1-q0)
+t2 = dlogq2[:,j]
 
 # alpha_seq = np.linspace(-126,-127,10)
 # t1 = np.zeros(len(alpha_seq))

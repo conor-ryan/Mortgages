@@ -98,6 +98,37 @@ def market_shares(r,alpha,d,theta,return_bound=False):
     else:
         return s 
 
+def conditional_shares(r,alpha,d,theta,return_bound=False):
+    # Utility Specification
+    util = np.dot(d.X,theta.beta_x) + alpha*r
+    max_util = np.maximum(max(util),0.0) # Normalization so exp() doesn't crash
+    out = np.exp(0.0 - max_util)
+    util = util - max_util
+
+    # Logit Share Probabilities
+    eu = np.exp(util)
+    s = eu/(np.sum(eu))
+    
+    # Bounds on shares so log() doesn't crash
+    tol = 1e-15
+    bound_flag = 0 
+    # if any(s<tol):
+    #     s = s*(1-tol) + tol*(sum(s)/len(s))
+    #     # bound_flag  = 1
+    # if ((1-sum(s))<tol):
+    #     s = (s/sum(s))*(1-tol) 
+    #     # bound_flag  = 1
+    if sum(s)<tol:
+        s = np.repeat(tol/len(s),len(s))
+        bound_flag  = 1
+     
+    if return_bound:
+        return s, bound_flag
+    else:
+        return s 
+
+
+
 ## Market Share Derivatives (Product-Consumer-specific demand)
 # r - vector of interest rates in the market
 # alpha - consumer specific price elasticity parameter

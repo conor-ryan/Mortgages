@@ -70,9 +70,12 @@ def r_sell_min(theta,d,m):
 # d - data object
 # theta - parameter object
 def market_shares(r,alpha,d,theta,return_bound=False):
+    # Bounds tolerance on shares so log() doesn't crash
+    tol = 1e-15
+
     # Utility Specification
     util = np.dot(d.X,theta.beta_x) + alpha*r
-    if all(util<-100):
+    if all(util<-50):
         s = np.repeat(tol/len(s),len(s))
         bound_flag  = 1
     else:
@@ -86,8 +89,6 @@ def market_shares(r,alpha,d,theta,return_bound=False):
         eu = np.exp(util)
         s = eu/(out + np.sum(eu))
         
-        # Bounds on shares so log() doesn't crash
-        tol = 1e-15
         bound_flag = 0 
         # if any(s<tol):
         #     s = s*(1-tol) + tol*(sum(s)/len(s))

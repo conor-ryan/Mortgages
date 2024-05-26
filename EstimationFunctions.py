@@ -88,10 +88,13 @@ def consumer_likelihood_eval(theta,d,m,model="base"):
         print("Robust Eq Method",d.i,itr) # An indication of the stability of the algorithm
  
     #Compute market shares
-    q = ModelFunctions.market_shares(r_eq,alpha,d,theta)
+    q,sb = ModelFunctions.market_shares(r_eq,alpha,d,theta,return_bound=True)
     q_cond = ModelFunctions.conditional_shares(r_eq,alpha,d,theta)
     # Compute likelihood contribution
-    ll_i = np.log(q_cond[d.lender_obs])
+    if sb==0:
+        ll_i = np.log(q_cond[d.lender_obs])
+    else:
+        ll_i = np.log(1/len(q))
     # ll_i = np.log(q[d.lender_obs]) - np.log(np.sum(q))
     # Compute macro likelihood contribution
     q0 = 1- np.sum(q) # Probability of selecting outside option
@@ -126,7 +129,10 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
     q,sb = ModelFunctions.market_shares(r_eq,alpha,d,theta,return_bound=True)
     q_cond = ModelFunctions.conditional_shares(r_eq,alpha,d,theta)
     # Compute likelihood contribution
-    ll_i = np.log(q_cond[d.lender_obs])
+    if sb==0:
+        ll_i = np.log(q_cond[d.lender_obs])
+    else:
+        ll_i = np.log(1/len(q))
     # ll_i = np.log(q[d.lender_obs]) - np.log(np.sum(q))
     # Compute macro likelihood contribution
     q0 = 1- np.sum(q) # Probability of selecting outside option
@@ -181,7 +187,10 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
     q,sb = ModelFunctions.market_shares(r_eq,alpha,d,theta,return_bound=True)
     q_cond = ModelFunctions.conditional_shares(r_eq,alpha,d,theta)
     # Compute likelihood contribution
-    ll_i = np.log(q_cond[d.lender_obs])
+    if sb==0:
+        ll_i = np.log(q_cond[d.lender_obs])
+    else:
+        ll_i = np.log(1/len(q))
     # ll_i = np.log(q[d.lender_obs]) - np.log(np.sum(q))
     # Compute macro likelihood contribution
     q0 = 1- np.sum(q) # Probability of selecting outside option

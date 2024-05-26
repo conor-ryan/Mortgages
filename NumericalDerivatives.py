@@ -3,7 +3,7 @@ import EquilibriumFunctions
 import EstimationFunctions
 import ParallelFunctions
 from Derivatives import *
-# import TestConditionalFunctions
+import TestConditionalFunctions
 
 def deriv_test_endo(d,theta,m):
     vec = theta.all()

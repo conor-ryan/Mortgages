@@ -413,8 +413,12 @@ def solve_eq_r_optim(r0,j,d,theta,m,model="base",return_bound=False):
     if itr<itr_max:
         # Bound Alpha Value
         if alpha < theta.alpha_min:
-            alpha = theta.alpha_min
-            r = ModelFunctions.min_rate(d,theta,m,model=model) - 1/theta.alpha_min
+            r_min = ModelFunctions.min_rate(d,theta,m,model=model)
+            prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(r0,len(r_min)),d,theta,m)
+            # alpha = theta.alpha_min
+            alpha = -dprof[j]/prof[j]
+            # r = ModelFunctions.min_rate(d,theta,m,model=model) - 1/theta.alpha_min
+            r = r_min - 1/alpha
             alpha_bound = 1
         if return_bound:
             return alpha, r, itr, True, alpha_bound
@@ -467,8 +471,10 @@ def solve_eq_r_optim(r0,j,d,theta,m,model="base",return_bound=False):
 
     ## Bound Alpha Value
     if alpha < theta.alpha_min:
-        alpha = theta.alpha_min
-        r = ModelFunctions.min_rate(d,theta,m,model=model) - 1/theta.alpha_min
+        # alpha = theta.alpha_min
+        # r = r_min - 1/theta.alpha_min
+        alpha = alpha_max
+        r = r_min - 1/alpha_max
     if return_bound:
         return alpha,r, res.nfev, res.success, alpha_bound
     else:    

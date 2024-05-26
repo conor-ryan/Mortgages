@@ -76,7 +76,7 @@ def market_shares(r,alpha,d,theta,return_bound=False):
     # Utility Specification
     util = np.dot(d.X,theta.beta_x) + alpha*r
     if all(util<-50):
-        s = np.repeat(tol/len(s),len(s))
+        s = np.repeat(tol/len(util),len(util))
         bound_flag  = 1
     else:
         norm_util = -np.maximum(max(util),0.0) # Normalization so exp() doesn't crash

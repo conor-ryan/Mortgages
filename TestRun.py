@@ -13,7 +13,7 @@ from ParallelFunctions import *
 from Derivatives import * 
 from CostEstFunctions import *
 from KernelFunctions import *
-
+from NumericalDerivatives import *
 
 
 # File with Loan-Level Data
@@ -162,3 +162,16 @@ f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_da
 
 
 
+print("Test Numerical Derivative At Optimum")
+clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
+ll1, grad1 = evaluate_likelihood_gradient(res,theta,clist,parallel=True,num_workers=NUM_WORKERS)
+print("Analytical Gradient")
+print(grad1)
+g_size = np.mean(np.sqrt(grad1[0:len(res)]**2))
+print(g_size)
+print("Numerical Gradient")
+g_test = deriv_test_ll_parallel(res,theta,clist,NUM_WORKERS)
+print(g_test)
+print(grad1[0:len(res)]-g_test)
+g_test_size =  np.mean(np.sqrt(g_test**2))
+print(g_test_size)

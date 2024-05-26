@@ -128,14 +128,14 @@ def deriv_test_ll_parallel(vec,theta,clist,num_workers):
     eps = 1e-8
     n = 0
     theta.set_demand(vec)
-    ll1 = ParallelFunctions.evaluate_likelihood_parallel(vec,theta,clist,num_workers)
+    ll1 = EstimationFunctions.evaluate_likelihood(vec,theta,clist,parallel=True,num_workers=num_workers)
     for i in range(len(vec)):
         vec_new = np.copy(vec)
         vec_new[i] = vec[i] + eps
-        ll2 = ParallelFunctions.evaluate_likelihood_parallel(vec_new,theta,clist,num_workers)
+        ll2 = EstimationFunctions.evaluate_likelihood(vec_new,theta,clist,parallel=True,num_workers=num_workers)
 
         vec_new[i] = vec[i] - eps
-        ll3 = ParallelFunctions.evaluate_likelihood_parallel(vec_new,theta,clist,num_workers)
+        ll3 = EstimationFunctions.evaluate_likelihood(vec_new,theta,clist,parallel=True,num_workers=num_workers)
 
         der = (ll2-ll3)/(2*eps)
         print(der)

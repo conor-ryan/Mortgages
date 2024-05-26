@@ -179,7 +179,7 @@ def conditional_parameter_second_derivatives(r,alpha,d,theta,m,model="base"):
     dalpha_dtheta = dendo_dtheta[:,d.lender_obs]
     d2alpha_dtheta2 = d2endo_dtheta2[d.lender_obs,:,:]
 
-    return dlogq_dtheta, d2logq_dtheta2, dq0_dtheta, d2q0_dtheta2, dalpha_dtheta,d2alpha_dtheta2
+    return dlogq_dtheta, d2logq_dtheta2
 
 
 
@@ -234,7 +234,7 @@ def conditional_parameter_derivatives(r,alpha,d,theta,m,model="base"):
     # return alpha derivative for macro gradient
     dalpha_dtheta = dendo_dtheta[:,d.lender_obs]
 
-    return dlogq_dtheta, dq0_dtheta, dalpha_dtheta
+    return dlogq_dtheta
 
 
 

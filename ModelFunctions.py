@@ -72,26 +72,32 @@ def r_sell_min(theta,d,m):
 def market_shares(r,alpha,d,theta,return_bound=False):
     # Utility Specification
     util = np.dot(d.X,theta.beta_x) + alpha*r
-    max_util = np.maximum(max(util),0.0) # Normalization so exp() doesn't crash
-    out = np.exp(0.0 - max_util)
-    util = util - max_util
-
-    # Logit Share Probabilities
-    eu = np.exp(util)
-    s = eu/(out + np.sum(eu))
-    
-    # Bounds on shares so log() doesn't crash
-    tol = 1e-15
-    bound_flag = 0 
-    # if any(s<tol):
-    #     s = s*(1-tol) + tol*(sum(s)/len(s))
-    #     # bound_flag  = 1
-    # if ((1-sum(s))<tol):
-    #     s = (s/sum(s))*(1-tol) 
-    #     # bound_flag  = 1
-    if sum(s)<tol:
+    if all(util<-100):
         s = np.repeat(tol/len(s),len(s))
         bound_flag  = 1
+    else:
+        norm_util = -np.maximum(max(util),0.0) # Normalization so exp() doesn't crash
+        if all(util<-10):
+            norm_util = -np.ceil(np.max(util)/10)*10
+        out = np.exp(0.0 + norm_util)
+        util = util + norm_util
+
+        # Logit Share Probabilities
+        eu = np.exp(util)
+        s = eu/(out + np.sum(eu))
+        
+        # Bounds on shares so log() doesn't crash
+        tol = 1e-15
+        bound_flag = 0 
+        # if any(s<tol):
+        #     s = s*(1-tol) + tol*(sum(s)/len(s))
+        #     # bound_flag  = 1
+        # if ((1-sum(s))<tol):
+        #     s = (s/sum(s))*(1-tol) 
+        #     # bound_flag  = 1
+        if sum(s)<tol:
+            s = np.repeat(tol/len(s),len(s))
+            bound_flag  = 1
      
     if return_bound:
         return s, bound_flag
@@ -101,9 +107,10 @@ def market_shares(r,alpha,d,theta,return_bound=False):
 def conditional_shares(r,alpha,d,theta,return_bound=False):
     # Utility Specification
     util = np.dot(d.X,theta.beta_x) + alpha*r
-    max_util = np.maximum(max(util),0.0) # Normalization so exp() doesn't crash
-    out = np.exp(0.0 - max_util)
-    util = util - max_util
+    norm_util = -np.maximum(max(util),0.0) # Normalization so exp() doesn't crash
+    if all(util<-10):
+        norm_util = -np.ceil(np.max(util)/10)*10
+    util = util + norm_util
 
     # Logit Share Probabilities
     eu = np.exp(util)

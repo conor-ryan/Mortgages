@@ -150,7 +150,8 @@ start_parameters = np.zeros(len(true_parameters))
 
 print("Estimate in Parallel with precondition")
 f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,parallel=True,num_workers=NUM_WORKERS,
-                         gtol=1e-6,pre_condition=True,max_step_size = 10)
+                         gtol=1e-6,pre_condition=True,pre_cond_itr=5,
+                         max_step_size = 10)
 
 
 # print("Estimate without parallel")

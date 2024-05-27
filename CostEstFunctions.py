@@ -44,7 +44,7 @@ def estimate_costs(rate_spec,mbs_spec,cons_cost,bank_cost,discount_spec,first_st
     revenues = consumer_revenue(cost_data,HTM_rate_rev,MBS_rate_rev,first_stage)
     
     # Define constraints: 0 <= predicted marginal cost <= expected originated revenue
-    lin_const = sp.optimize.LinearConstraint(cost_data,np.repeat(0.0,len(revenues)),revenues)
+    lin_const = sp.optimize.LinearConstraint(cost_data,np.repeat(-np.Inf,len(revenues)),revenues)
 
     # Define a wrapper for predicted marginal cost
     # Objective value: normalization of sum squared cost
@@ -60,7 +60,7 @@ def estimate_costs(rate_spec,mbs_spec,cons_cost,bank_cost,discount_spec,first_st
     # Solve optimization problem
     res = sp.optimize.minimize(f_obj,cost_parameters,method='SLSQP',
                                 constraints = lin_const,
-                                options={'disp':True})
+                                options={'disp':True,'ftol':1e-9})
     
     # Create an index of all observations where estimated cost is not roughly equal to expected revenue.
     rev_h,rev_s,diff_cost,prob_h,prob_s = consumer_revenue(cost_data,HTM_rate_rev,MBS_rate_rev,first_stage,return_all=True)

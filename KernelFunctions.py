@@ -75,7 +75,9 @@ def macro_likelihood_grad(a_list,c_list_H,c_list_S,q0_list,
         pred_out[o] = out
         x = theta.N[o]*(theta.out_share[o]*(g)/out - (1-theta.out_share[o])*(g)/(1-out) )
         grad += x
-    print("Outside Share",pred_out)
+    
+    if (any(pred_out>(1-1e-3))) or (any(pred_out<1e-3)):
+        print("Outside Share Close to Corner Solution:",pred_out)
     ll_macro = np.sum(theta.N*theta.out_share*np.log(pred_out)) + \
                     np.sum(theta.N*(1-theta.out_share)*np.log(1-pred_out))
     return ll_macro, grad

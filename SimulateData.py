@@ -17,7 +17,7 @@ random.seed(2220242381)
 #### Data Size ####
 M = 1 #Markets
 J = 5# Lenders
-N = 4000 # Consumers per market
+N = 10000 # Consumers per market
 
 
 #### Model Parameters

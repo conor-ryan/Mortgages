@@ -484,6 +484,7 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
 def estimate_NR(x,theta,cdf,mdf,mbsdf,
                 parallel=False,num_workers=0,
                 gtol=1e-6,xtol=1e-12,
+                max_step_size = 10,
                 pre_condition=False,pre_cond_itr=10):
     # Testing Tool: A index of parameters to estimate while holding others constant
     # This can help identification. range(0,len(x)) will estimate all parameters 
@@ -571,7 +572,7 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,
         alpha = 1.0
         # Bound the step size to be one in order to avoid model crashes on odd parameters
         largest_step = np.max(np.abs(p_k))
-        alpha = np.minimum(10.0/largest_step,1.0)
+        alpha = np.minimum(max_step_size/largest_step,1.0)
 
         # Compute bounded step
         s_k = alpha*p_k

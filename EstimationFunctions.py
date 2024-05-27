@@ -608,7 +608,7 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,
                 print("#### Begin Gradient Ascent")
                 ll_new,x_new = estimate_GA(x,theta,clist,parallel=parallel,
                                            num_workers=num_workers,
-                                           itr_max=pre_cond_itr)
+                                           itr_max=4)
             elif (attempt_gradient_step==1):
                 print("#### No Better Point Found")
                 return ll_best, x_best

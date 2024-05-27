@@ -41,7 +41,7 @@ consumer_cost_spec =["7", "8","9","10","11","12","13","6"]
 # Bank Cost Covariates - Variables in Market Data
 bank_cost_spec = ["7","8","9"]
 # Bank Demand Covariates - Variables in Market Data
-bank_dem_spec = ["2","3","4","5","6","10"]
+bank_dem_spec = ["2","3","4","5","6","0"]
 
 # Discount Factor Covariates ("Time Dummies or Aggregate Data") - Consumer Data
 discount_spec = ["14","15"]#,"x13","x14","x15"]

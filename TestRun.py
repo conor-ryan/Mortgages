@@ -76,11 +76,6 @@ true_first_stage = ParameterFirstStage(0.04,np.array([0.5,0.25]),
 #                                        np.array([0.044,0.00094,-0.00514]))
 
 
-
-# consumer_spec = ["7","6"]
-# bank_spec = ["13","14","15"]
-cost_spec = bank_spec + consumer_spec
-
 cost_res,keep_index = estimate_costs(rate_spec,mbs_price,consumer_spec,bank_spec,discount_spec,
                                 true_first_stage,consumer_data)
 

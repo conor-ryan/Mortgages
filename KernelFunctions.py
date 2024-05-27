@@ -120,7 +120,9 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0
 
     ll_macro = np.sum(theta.N*theta.out_share*np.log(pred_out)) + \
                     np.sum(theta.N*(1-theta.out_share)*np.log(1-pred_out))
-    print("Outside Share",pred_out)
+    
+    if (any(pred_out>1-1e-3)) or (any(pred_out<1-1e-3)):
+        print("Outside Share Close to Corner Solution:",pred_out)
     #Approximate Hessian (BFGS)
     BFGS_mem = kwargs.get("r_start")
     x_curr = theta.all()[theta.beta_x_ind]
@@ -137,34 +139,7 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0
     return ll_macro, grad, hess, BFGS_next
     # return ll_macro, grad, H_new, BFGS_next
 
-# def out_share_gradient(a_mkt,q0_mkt,out_share):
-#     f0 = np.log(outside_share(a_mkt,q0_mkt,out_share))
-#     N= len(a_mkt)
-#     epsilon = 1e-12
-#     print("Outside Share Prediction:", np.exp(f0))
-#     grad_alpha = np.zeros(N)
-#     a_new = np.copy(a_mkt)
-#     for i in range(N):
-#         a_new[i] = a_mkt[i] + epsilon 
-#         f1 = np.log(outside_share(a_new,q0_mkt,out_share))
-#         grad_alpha[i] = (f1-f0)/epsilon
-#         a_new[i] = a_mkt[i] 
-    
-#     grad_q0 = np.zeros(N)
-#     q_new = np.copy(q0_mkt)
-#     for i in range(N):
-#         if q_new[i]<(1 - 2*epsilon):
-#             q_new[i] = q0_mkt[i] + epsilon 
-#             f1 = np.log(outside_share(a_mkt,q_new,out_share))
-#             grad_q0[i] = (f1-f0)/epsilon
-#         else:
-#             q_new[i] = q0_mkt[i] - epsilon 
-#             f1 = np.log(outside_share(a_mkt,q_new,out_share))
-#             grad_q0[i] = -(f1-f0)/epsilon
 
-#         q_new[i] = q0_mkt[i] 
-
-#     return f0,grad_alpha, grad_q0
 def out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
                         da_mkt,dq0_mkt,
                         out_share,theta):
@@ -189,115 +164,63 @@ def out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
     f = f_obj(x)
     return f,grad
     
-# def out_share_gradient_WH(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
-#                         da_mkt,dq0_mkt,
-#                         d2a_mkt,d2q0_mkt,out_share,theta):
-#     x = theta.beta_x
-#     def f_obj(vec):
-#         a_1 = a_mkt + np.dot(da_mkt[:,0:len(vec)],(vec-x)) + 0.5*np.dot(np.tensordot(d2a_mkt[:,0:len(vec),0:len(vec)],vec-x,axes=1),np.transpose((vec-x)))
-#         q_1 = q0_mkt + np.dot(dq0_mkt[:,0:len(vec)],(vec-x)) + 0.5*np.dot(np.tensordot(d2q0_mkt[:,0:len(vec),0:len(vec)],vec-x,axes=1),np.transpose((vec-x)))
-#         f0 = outside_share(a_1,c_mkt_H,c_mkt_S,q_1,out_share)
-#         return f0
 
-#     grad_func = nd.Gradient(f_obj,step=1e-10,method="central",order = 4)
-#     g = grad_func(x)
-#     f = f_obj(x)
-#     return f,g
+# def macro_ll_test(x,theta,cdf,mdf,mbsdf):
+#     # Print candidate parameter guess 
+#     print("Parameters:", x)
+#     # Set parameters in the parameter object
+#     theta.set_demand(x)   
 
-# f0 = outside_share(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,out_share)
-# N= da_mkt.shape[1]
-# min_epsilon1 = np.min(q0_mkt/np.max(dq0_mkt,1))
-# min_epsilon2 = np.min((1-q0_mkt)/np.abs(np.min(dq0_mkt,1)))
-# epsilon = np.minimum(1e-8,np.minimum(min_epsilon1,min_epsilon2)/2)
-# # print("Outside Share Prediction:", f0)
-# grad_theta = np.zeros(N)
-# a_new = np.copy(a_mkt)
-# for i in range(N):
-#     a_1 = a_mkt - da_mkt[:,i]*epsilon 
-#     # ch_1 = c_mkt_H - dc_mkt[:,i]*epsilon
-#     # cs_1 = c_mkt_S - dc_mkt[:,i]*epsilon
-#     q_1 = q0_mkt - dq0_mkt[:,i]*epsilon
-
-#     a_2 = a_mkt + da_mkt[:,i]*epsilon 
-#     # ch_2 = c_mkt_H + dc_mkt[:,i]*epsilon
-#     # cs_2 = c_mkt_S + dc_mkt[:,i]*epsilon
-#     q_2 = q0_mkt + dq0_mkt[:,i]*epsilon
-#     # print(np.min(a_new),np.max(a_new),np.min(q_new),np.max(q_new))
-#     # f1 = np.log(outside_share(a_new,q_new,out_share))
-#     f1 = outside_share(a_1,c_mkt_H,c_mkt_S,q_1,out_share)
-#     f2 = outside_share(a_2,c_mkt_H,c_mkt_S,q_2,out_share)
-#     grad_theta[i] = (f2-f1)/epsilon
-
-# return f0,grad_theta
-
-
-def test_share_sample(a_mkt,q0_mkt,out_share,N):
-    true_val = np.log(outside_share(a_mkt,q0_mkt,out_share))
-    draws = np.zeros(1000)
-    for i in range(1000):
-        sample = np.random.choice(range(len(a_mkt)),N)
-        a_sample = a_mkt[sample]
-        q_sample = q0_mkt[sample]
-        draws[i] = np.log(outside_share(a_sample,q_sample,out_share))-true_val
-    return draws
-
-
-def macro_ll_test(x,theta,cdf,mdf,mbsdf):
-    # Print candidate parameter guess 
-    print("Parameters:", x)
-    # Set parameters in the parameter object
-    theta.set_demand(x)   
-
-    ll_micro = 0.0
+#     ll_micro = 0.0
 
     
-    alpha_list = np.zeros(cdf.shape[0])
-    q0_list = np.zeros(cdf.shape[0])
-    # Iterate over all consumers
-    itr_avg = 0
-    for i in range(cdf.shape[0]):
-        # Subset data for consumer i
-        dat, mbs = EstimationFunctions.consumer_subset(i,theta,cdf,mdf,mbsdf)
-        # Evaluate likelihood and gradient for consumer i 
-        ll_i,q0_i,a_i,itr = EstimationFunctions.consumer_likelihood_eval(theta,dat,mbs)
-        # Add outside option, probability weights, and derivatives
-        # pred_N[dat.out] += w_i
-        # pred_N_out[dat.out] += q0_i*w_i
-        # dpred_N[dat.out,:] += dw_i
-        # q0_mkt[dat.out] += q0_i
-        # dq0_mkt[dat.out,:] += dq0_i
-        # mkt_Obs[dat.out] +=1
-        # Add contribution to total likelihood, gradient and hessian (by outside option market)
-        # Derivatives need to account for the fact that the likelihood is weighted
-        # ll_market[dat.out] +=ll_i*w_i
-        # dll_market[dat.out,:] += dll_i*w_i + ll_i*dw_i
+#     alpha_list = np.zeros(cdf.shape[0])
+#     q0_list = np.zeros(cdf.shape[0])
+#     # Iterate over all consumers
+#     itr_avg = 0
+#     for i in range(cdf.shape[0]):
+#         # Subset data for consumer i
+#         dat, mbs = EstimationFunctions.consumer_subset(i,theta,cdf,mdf,mbsdf)
+#         # Evaluate likelihood and gradient for consumer i 
+#         ll_i,q0_i,a_i,itr = EstimationFunctions.consumer_likelihood_eval(theta,dat,mbs)
+#         # Add outside option, probability weights, and derivatives
+#         # pred_N[dat.out] += w_i
+#         # pred_N_out[dat.out] += q0_i*w_i
+#         # dpred_N[dat.out,:] += dw_i
+#         # q0_mkt[dat.out] += q0_i
+#         # dq0_mkt[dat.out,:] += dq0_i
+#         # mkt_Obs[dat.out] +=1
+#         # Add contribution to total likelihood, gradient and hessian (by outside option market)
+#         # Derivatives need to account for the fact that the likelihood is weighted
+#         # ll_market[dat.out] +=ll_i*w_i
+#         # dll_market[dat.out,:] += dll_i*w_i + ll_i*dw_i
 
-        ll_micro += ll_i
+#         ll_micro += ll_i
 
-        alpha_list[i] = a_i
-        q0_list[i] = q0_i
+#         alpha_list[i] = a_i
+#         q0_list[i] = q0_i
 
-        # Track iteration counts (for potential diagnostics)
-        itr_avg += max(itr,0)
+#         # Track iteration counts (for potential diagnostics)
+#         itr_avg += max(itr,0)
     
-    # Compute total log likelihood
-    ll_macro =macro_likelihood(alpha_list,q0_list,theta)
+#     # Compute total log likelihood
+#     ll_macro =macro_likelihood(alpha_list,q0_list,theta)
 
-    return ll_macro
+#     return ll_macro
 
 
-def test_macro_derivative(x,theta,cdf,mdf,mbsdf):
-    f0 = macro_ll_test(x,theta,cdf,mdf,mbsdf)
-    N= len(x)
-    epsilon = 1e-6
-    grad = np.zeros(N)
-    for i in range(N):
-        x_new = np.copy(x)
-        x_new[i] = x[i] + epsilon 
-        f1 = macro_ll_test(x_new,theta,cdf,mdf,mbsdf)
-        g = (f1-f0)/epsilon
-        print(i,g)
-        grad[i] = g
-    return grad
+# def test_macro_derivative(x,theta,cdf,mdf,mbsdf):
+#     f0 = macro_ll_test(x,theta,cdf,mdf,mbsdf)
+#     N= len(x)
+#     epsilon = 1e-6
+#     grad = np.zeros(N)
+#     for i in range(N):
+#         x_new = np.copy(x)
+#         x_new[i] = x[i] + epsilon 
+#         f1 = macro_ll_test(x_new,theta,cdf,mdf,mbsdf)
+#         g = (f1-f0)/epsilon
+#         print(i,g)
+#         grad[i] = g
+#     return grad
     
 

@@ -5,8 +5,6 @@ import Derivatives
 import KernelFunctions
 import ParallelFunctions
 import numpy as np
-import scipy as sp
-import TestConditionalFunctions
 ### Consumer Data Subset Function
 ## Use the data frames, specification information, and consumer index i
 ## To create the relevant data objects for each specific consumer
@@ -156,7 +154,6 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
     else: # Everything is fine to compute gradient
         # Compute log share gradients
         dlogq, dq0, da = Derivatives.share_parameter_derivatives(r_eq,alpha,d,theta,m,model=model)
-        # dlogq =TestConditionalFunctions.conditional_parameter_derivatives(r_eq,alpha,d,theta,m)
         # Compute likelihood and probability weight gradients
         dll_i = dlogq[:,d.lender_obs] + dq0/(1-q0)
         dll_i = dll_i*(1-sb)
@@ -218,7 +215,6 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
     else: # Everything is fine to evaluate gradient and hessian
         # Compute log share derivatives and second derivatives
         dlogq, d2logq, dq0,d2q0, da,d2a  = Derivatives.share_parameter_second_derivatives(r_eq,alpha,d,theta,m,model=model)
-        # dlogq, d2logq =TestConditionalFunctions.conditional_parameter_second_derivatives(r_eq,alpha,d,theta,m)
         # Compute likelihood and probability weight gradients
         dll_i = dlogq[:,d.lender_obs] + dq0/(1-q0)
         # Compute likelihood and probability weight hessians
@@ -283,6 +279,7 @@ def evaluate_likelihood(x,theta,clist,parallel=False,num_workers=0,model="base")
             ll_i,q0_i,a_i,itr = consumer_likelihood_eval(theta,dat,mbs,model=model)
         
         ll_micro += ll_i
+        ## Collect consumer level info for implied outside option share
         alpha_list[i] = a_i
         q0_list[i] = q0_i
         c_list_H[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZH)
@@ -355,6 +352,7 @@ def evaluate_likelihood_gradient(x,theta,clist,parallel=False,num_workers=0,mode
         ll_micro += ll_i
         dll_micro += dll_i
 
+        ## Collect consumer level info for implied outside option share
         alpha_list[i] = a_i
         q0_list[i] = q0_i
         c_list_H[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZH)
@@ -407,6 +405,7 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
     d2ll_micro = np.zeros((K,K))
 
     
+    ## Collect consumer level info for implied outside option share
     alpha_list = np.zeros(N)
     q0_list = np.zeros(N)
     c_list_H = np.zeros(N)

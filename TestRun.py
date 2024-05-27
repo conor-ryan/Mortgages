@@ -79,7 +79,7 @@ true_first_stage = ParameterFirstStage(0.04,np.array([0.5,0.25]),
 cost_res,keep_index = estimate_costs(rate_spec,mbs_price,consumer_spec,bank_spec,discount_spec,
                                 true_first_stage,consumer_data)
 
-
+print("Cost Estimates",cost_res.x)
 percent_drop = 1 - sum(keep_index)/len(keep_index)
 print("Cost Estimate Drop Fraction:", percent_drop)
 
@@ -97,7 +97,7 @@ theta = Parameters(consumer_data,
 cost_true = np.array([0,0,0.000,#Gamma_WH
                       0.4,0.0,0,0,0,0.00,0,0.00])
 theta.set_cost(cost_res.x)
-true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5.0])#, # Beta_x
+true_parameters = np.array([9.3,9.1, 8.9, 8.7,8.5,30.0])#, # Beta_x
                 #    0,0,0, #Gamma_WH
                 #    0.32,0]) # Gamma_ZH
 

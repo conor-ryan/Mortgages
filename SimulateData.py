@@ -41,7 +41,7 @@ for j in range(J):
 
 
 # Lender Demand Parameters (J)
-β_x = np.array([12.3,12.1, 11.9, 11.7,11.5,5.0])
+β_x = np.array([9.3,9.1, 8.9, 8.7,8.5,30.0])
 
 #### Cost Data
 #cost_bounds = [[0,5],[1,100],[0,10]]
@@ -56,7 +56,7 @@ for i in range(W.shape[0]):
 
 # Cost Parameters
 # γ_WH = np.array([-0.01,-0.005,0.002])
-γ_WH = np.array([0,0,0.000])
+γ_WH = np.array([-0.01,-0.005,0.002])
 γ_WS = np.array([0.044,0.00094,-0.00514])
 
 #### Consumer Data
@@ -71,7 +71,7 @@ for i in range(Z.shape[0]):
 Z[:,5] = 1.0*(Z[:,5]<-0.5)
 
 # γ_ZH = np.array([0.32,-1e-5,-1e-5,1e-5,0.00,0.005,0.00,0.1])
-γ_ZH = np.array([0.4,0.0,0,0,0,0.00,0,0.00])
+γ_ZH = np.array([0.4,-1.4e-4,-3.5e-5,0,0,0.00,0,0.3])
 γ_ZS = np.array([-0.299,1.1e-4,3e-5,-7.2e-4,0,6.55e-3,7e-5,-0.161])
 
 
@@ -253,7 +253,6 @@ np.median(consumer_data[:,4])
 np.quantile(consumer_data[:,4],0.1)
 np.quantile(consumer_data[:,4],0.9)
 np.mean(consumer_data[:,5])
-
 
 print(len(consumer_data))
 print(np.mean(consumer_data[:,5]))

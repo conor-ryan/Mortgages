@@ -121,7 +121,7 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0
     ll_macro = np.sum(theta.N*theta.out_share*np.log(pred_out)) + \
                     np.sum(theta.N*(1-theta.out_share)*np.log(1-pred_out))
     
-    if (any(pred_out>1-1e-3)) or (any(pred_out<1-1e-3)):
+    if (any(pred_out>(1-1e-3))) or (any(pred_out<1e-3)):
         print("Outside Share Close to Corner Solution:",pred_out)
     #Approximate Hessian (BFGS)
     BFGS_mem = kwargs.get("r_start")

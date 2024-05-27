@@ -79,12 +79,12 @@ Z[:,5] = 1.0*(Z[:,5]<-0.5)
 σ = 0.04 # Balance-sheet shock variance
 
 ##### Parameters Uncovered Not Estimated 
-α_min = -50 # Mean price sensitivity
+α_min = -10 # Mean price sensitivity
 α_max = -200 # Price sensitivity dispersion
 
 # Log normal distribution
 α_mean = 0 # Mean price sensitivity
-α_var = 0.5 # Price sensitivity dispersion
+α_var = 1 # Price sensitivity dispersion
 α_scale = -100
 
 
@@ -157,7 +157,7 @@ for m in range(M):
             consumer_data[index,0] = m_ind
             consumer_data[index,1] = index_t
             # consumer_data[index,2] = α_min + random.random()*(α_max-α_min)
-            consumer_data[index,2] = np.exp(random.gauss(α_mean,α_var))*α_scale
+            consumer_data[index,2] = α_min + np.exp(random.gauss(α_mean,α_var))*α_scale
             # consumer_data[index,3] = Chosen Lender
             # consumer_data[index,4] = Interest Rate
             # consumer_data[index,5] = Sold or Not

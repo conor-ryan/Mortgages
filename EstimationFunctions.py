@@ -290,7 +290,7 @@ def evaluate_likelihood(x,theta,clist,parallel=False,num_workers=0,model="base")
     ll = ll_micro + ll_macro
     # Print and output likelihood value
     # print("Likelihood:",ll, "Macro Component:", ll_macro)
-    return ll
+    return ll/N
 
 ### Evaluate Likelihood Function with Gradient
 # Inputs
@@ -370,7 +370,7 @@ def evaluate_likelihood_gradient(x,theta,clist,parallel=False,num_workers=0,mode
 
     # Print and output likelihood value
     # print("Likelihood:",ll, "Macro Component:", ll_macro)
-    return ll, dll
+    return ll/N, dll/N
 
 ### Evaluate Likelihood Function with Gradient and Hessian
 # Inputs
@@ -465,7 +465,7 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
     if np.sum(sbound_mean)>0:
         print("Fraction on Share Bound",np.mean(sbound_mean))
     print("Fraction below Alpha Bound",np.mean(abound_mean))
-    return ll, dll, d2ll, BFGS_next
+    return ll/N, dll/N, d2ll/N, BFGS_next
 
 ##### Optimization Functions to Maximize Likelihood and Estimate Parameters #######
 

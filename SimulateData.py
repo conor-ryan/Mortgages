@@ -41,7 +41,7 @@ for j in range(J):
 
 
 # Lender Demand Parameters (J)
-β_x = np.array([9.3,9.1, 8.9, 8.7,8.5,30.0])
+β_x = np.array([9.3,9.1, 8.9, 8.7,8.5,-1])
 
 #### Cost Data
 #cost_bounds = [[0,5],[1,100],[0,10]]
@@ -171,7 +171,8 @@ for m in range(M):
 
 
 demand_ind = list(range(2,(2+X.shape[1])))
-demand_ind.append(market_data.shape[1]-1)
+# demand_ind.append(market_data.shape[1]-1)
+demand_ind.append(0)
 cost_ind = list(range(2+X.shape[1],(2+X.shape[1]+W.shape[1])))
 
 

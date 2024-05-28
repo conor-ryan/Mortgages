@@ -51,7 +51,7 @@ def estimate_costs(rate_spec,mbs_spec,cons_cost,bank_cost,discount_spec,first_st
     # Objective value: normalization of sum squared cost
     def f_obj(x):
         costs = np.dot(cost_data,x)
-        return -sum(costs**2)/1e5
+        return -sum(costs**2)/1e4
 
     # Starting parameter guess
     cost_parameters = np.zeros(cost_data.shape[1])
@@ -85,7 +85,7 @@ def drop_low_margins(theta,cdf,mdf,mbsdf):
         prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(dat.r_obs,J),dat,theta,cons['mbs'])
         margins[i] = prof[dat.lender_obs]/dprof[dat.lender_obs]
     
-    keep_index = margins>(-1/theta.alpha_min)*2
+    keep_index = margins>(-1/theta.alpha_min)*1.5
     return keep_index
 
 

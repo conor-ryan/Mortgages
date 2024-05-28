@@ -85,7 +85,7 @@ def drop_low_margins(theta,cdf,mdf,mbsdf):
         prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(dat.r_obs,J),dat,theta,cons['mbs'])
         margins[i] = prof[dat.lender_obs]/dprof[dat.lender_obs]
     
-    keep_index = margins>(-1/theta.alpha_min)
+    keep_index = margins>(-1/theta.alpha_min)*2
     return keep_index
 
 

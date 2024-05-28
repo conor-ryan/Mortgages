@@ -71,11 +71,6 @@ true_first_stage = ParameterFirstStage(0.04,np.array([0.5,0.25]),
                                        np.array([-0.299,1.1e-4,3e-5,-7.2e-4,0,6.55e-3,7e-5,-0.161]),
                                        np.array([0.044,0.00094,-0.00514]))
 
-# fs = ParameterFirstStage(0.04,np.array([0.5,0.25]),
-#                                        np.array([-0.299,-0.161]),
-#                                        np.array([0.044,0.00094,-0.00514]))
-
-
 cost_res = estimate_costs(rate_spec,mbs_price,consumer_spec,bank_spec,discount_spec,
                                 true_first_stage,consumer_data)
 
@@ -87,8 +82,8 @@ theta = Parameters(bank_dem_spec,bank_cost_spec,consumer_cost_spec,discount_spec
                    share_data["3"],share_data["4"])
 
 
-cost_true = np.array([-0.01,-0.005,0.002,#Gamma_WH
-                      0.4,-1.4e-4,-3.5e-5,0,0,0.00,0,0.3])
+# cost_true = np.array([-0.01,-0.005,0.002,#Gamma_WH
+#                       0.4,-1.4e-4,-3.5e-5,0,0,0.00,0,0.3])
 theta.set_cost(cost_res.x)
 
 
@@ -110,44 +105,44 @@ true_parameters = np.array([9.3,9.1, 8.9, 8.7,8.5,0])#, # Beta_x
                 #    0.32,0]) # Gamma_ZH
 
 #### Run Timing Tests ####
-# clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
-# print("Timing 2 Cores")
-# for i in range(5):
-#     start = time.perf_counter()
-#     res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
-#                                        parallel=True,num_workers=2)
-#     end = time.perf_counter()
-#     elapsed = end - start
-#     print(f'Elapsed Time: {elapsed:.6f} seconds')
+clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
+print("Timing 2 Cores")
+for i in range(5):
+    start = time.perf_counter()
+    res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
+                                       parallel=True,num_workers=2)
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f'Elapsed Time: {elapsed:.6f} seconds')
 
-# print("Timing 4 Cores")
-# for i in range(5):
-#     start = time.perf_counter()
-#     res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
-#                                        parallel=True,num_workers=4)
-#     end = time.perf_counter()
-#     elapsed = end - start
-#     print(f'Elapsed Time: {elapsed:.6f} seconds')
-
-
-# print("Timing 8 Cores")
-# for i in range(5):
-#     start = time.perf_counter()
-#     res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
-#                                        parallel=True,num_workers=8)
-#     end = time.perf_counter()
-#     elapsed = end - start
-#     print(f'Elapsed Time: {elapsed:.6f} seconds')
+print("Timing 4 Cores")
+for i in range(5):
+    start = time.perf_counter()
+    res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
+                                       parallel=True,num_workers=4)
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f'Elapsed Time: {elapsed:.6f} seconds')
 
 
-# print("Timing 16 Cores")
-# for i in range(5):
-#     start = time.perf_counter()
-#     res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
-#                                        parallel=True,num_workers=16)
-#     end = time.perf_counter()
-#     elapsed = end - start
-#     print(f'Elapsed Time: {elapsed:.6f} seconds')
+print("Timing 8 Cores")
+for i in range(5):
+    start = time.perf_counter()
+    res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
+                                       parallel=True,num_workers=8)
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f'Elapsed Time: {elapsed:.6f} seconds')
+
+
+print("Timing 16 Cores")
+for i in range(5):
+    start = time.perf_counter()
+    res =  evaluate_likelihood_hessian(true_parameters,theta,clist,
+                                       parallel=True,num_workers=16)
+    end = time.perf_counter()
+    elapsed = end - start
+    print(f'Elapsed Time: {elapsed:.6f} seconds')
 
 NUM_WORKERS = 16
 start_parameters = np.zeros(len(true_parameters))
@@ -167,16 +162,3 @@ f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_da
 
 
 
-print("Test Numerical Derivative At Optimum")
-clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
-ll1, grad1 = evaluate_likelihood_gradient(res,theta,clist,parallel=True,num_workers=NUM_WORKERS)
-print("Analytical Gradient")
-print(grad1)
-g_size = np.mean(np.sqrt(grad1[0:len(res)]**2))
-print(g_size)
-print("Numerical Gradient")
-g_test = deriv_test_ll_parallel(res,theta,clist,NUM_WORKERS)
-print(g_test)
-print(grad1[0:len(res)]-g_test)
-g_test_size =  np.mean(np.sqrt(g_test**2))
-print(g_test_size)

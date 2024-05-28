@@ -128,6 +128,19 @@ res = np.array([  16.6769731,    16.47231718 ,  15.8495233   , 16.13734006,   15
 a_vec, e_vec,flag_vec = predicted_elasticity(true_parameters,theta,consumer_data,market_data,mbs_data)
 
 
+# print("Test Numerical Derivative At Optimum")
+# clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
+# ll1, grad1 = evaluate_likelihood_gradient(res,theta,clist,parallel=True,num_workers=NUM_WORKERS)
+# print("Analytical Gradient")
+# print(grad1)
+# g_size = np.mean(np.sqrt(grad1[0:len(res)]**2))
+# print(g_size)
+# print("Numerical Gradient")
+# g_test = deriv_test_ll_parallel(res,theta,clist,NUM_WORKERS)
+# print(g_test)
+# print(grad1[0:len(res)]-g_test)
+# g_test_size =  np.mean(np.sqrt(g_test**2))
+# print(g_test_size)
 
 
 fval, res  = parallel_optim(start,theta,consumer_data,market_data,mbs_data,4)

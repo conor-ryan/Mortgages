@@ -500,7 +500,7 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
     # print("Likelihood:",ll, "Macro ll component:", ll_macro)
     if np.sum(sbound_mean)>0:
         print("Fraction on Share Bound",np.mean(sbound_mean))
-    print("Fraction below Alpha Bound",np.mean(abound_mean))
+    # print("Fraction below Alpha Bound",np.mean(abound_mean))
     return ll/N, dll/N, d2ll/N, BFGS_next
 
 ##### Optimization Functions to Maximize Likelihood and Estimate Parameters #######

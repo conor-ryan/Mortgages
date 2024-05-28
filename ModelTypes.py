@@ -175,7 +175,7 @@ class Parameters:
 
     #### Set index for out share vector
     def construct_out_index(self,cdf):
-        self.out_vec = cdf[self.out_spec].to_numpy()
+        self.out_vec = cdf[self.out_index].to_numpy()
 
     ### Method - Set parameters from a numpy vector 
         # Input: parameter_vector, numpy vector with appropriate length

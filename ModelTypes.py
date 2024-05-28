@@ -132,7 +132,7 @@ class Parameters:
         self.gamma_ZH_ind = None
 
 
-    def __init__(self,cdf, # Consumer Data
+    def __init__(self,
                  demand_spec,cost_spec,cons_spec,discount_spec, # Model Specifications
                  mbs_spec,mbs_coupons, # Model Specifications
                  rate_spec,lender_spec,market_spec,time_spec,out_spec, # Model Specifications

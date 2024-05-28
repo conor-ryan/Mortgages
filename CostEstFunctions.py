@@ -69,9 +69,9 @@ def estimate_costs(rate_spec,mbs_spec,cons_cost,bank_cost,discount_spec,first_st
     exp_cost = estimated_hold_costs*prob_h +  (estimated_hold_costs+diff_cost)*prob_s
     margin = (exp_rev - exp_cost)/exp_rev
 
-    print("Negative Bounds",np.sum(estimated_hold_costs<=0))
+    print("Negative Bounds",np.sum(estimated_hold_costs<=1e-6))
     
-    keep_index = (margin>0.2) & (estimated_hold_costs<=0)
+    keep_index = (margin>0.2) & (estimated_hold_costs>1e-6)
     return res, keep_index
 
 

@@ -76,8 +76,23 @@ true_first_stage = ParameterFirstStage(0.04,np.array([0.5,0.25]),
 #                                        np.array([0.044,0.00094,-0.00514]))
 
 
-cost_res,keep_index = estimate_costs(rate_spec,mbs_price,consumer_spec,bank_spec,discount_spec,
+cost_res = estimate_costs(rate_spec,mbs_price,consumer_spec,bank_spec,discount_spec,
                                 true_first_stage,consumer_data)
+
+
+theta = Parameters(bank_dem_spec,bank_cost_spec,consumer_cost_spec,discount_spec,
+                   mbs_spec,mbs_coupons,
+                   rate_spec,lender_spec,market_spec,time_spec,outside_share_index,
+                   true_first_stage,
+                   share_data["3"],share_data["4"])
+
+
+cost_true = np.array([-0.01,-0.005,0.002,#Gamma_WH
+                      0.4,-1.4e-4,-3.5e-5,0,0,0.00,0,0.3])
+theta.set_cost(cost_res.x)
+
+
+keep_index = drop_low_margins(theta,consumer_data,market_data,mbs_data)
 
 print("Cost Estimates",cost_res.x)
 percent_drop = 1 - sum(keep_index)/len(keep_index)
@@ -87,16 +102,9 @@ consumer_data = consumer_data[keep_index]
 pd.DataFrame(consumer_data).to_csv("refresh.csv",index=False)
 consumer_data = pd.read_csv("refresh.csv")
 
-theta = Parameters(consumer_data,
-                   bank_dem_spec,bank_cost_spec,consumer_cost_spec,discount_spec,
-                   mbs_spec,mbs_coupons,
-                   rate_spec,lender_spec,market_spec,time_spec,outside_share_index,
-                   true_first_stage,
-                   share_data["3"],share_data["4"])
 
-cost_true = np.array([-0.01,-0.005,0.002,#Gamma_WH
-                      0.4,-1.4e-4,-3.5e-5,0,0,0.00,0,0.3])
-theta.set_cost(cost_res.x)
+
+
 true_parameters = np.array([9.3,9.1, 8.9, 8.7,8.5,0])#, # Beta_x
                 #    0,0,0, #Gamma_WH
                 #    0.32,0]) # Gamma_ZH

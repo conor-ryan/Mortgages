@@ -93,7 +93,7 @@ class MBS_Func:
 ## Second Stage Parameter Class 
 # Object to hold, parse, update the parameters of the model while estimating 
 class Parameters:
-    alpha_min = -500
+    alpha_min = -300
     # Method for simulation
 
 
@@ -132,7 +132,7 @@ class Parameters:
         self.gamma_ZH_ind = None
 
 
-    def __init__(self,cdf, # Consumer Data
+    def __init__(self,
                  demand_spec,cost_spec,cons_spec,discount_spec, # Model Specifications
                  mbs_spec,mbs_coupons, # Model Specifications
                  rate_spec,lender_spec,market_spec,time_spec,out_spec, # Model Specifications
@@ -172,25 +172,6 @@ class Parameters:
         self.gamma_WH_ind = range(len(demand_spec),len(demand_spec)+len(cost_spec)) # Second - Bank cost parameters
         self.gamma_ZH_ind = range(len(demand_spec)+len(cost_spec),len(demand_spec)+len(cost_spec)+len(cons_spec)) # Last - Consumer-loan specific parameters
         self.gamma_ind = range(len(demand_spec),len(demand_spec)+len(cost_spec)+len(cons_spec)) # All Cost Parameters
-
-        ### Construct Sampling Index for outside share
-        if cdf is None:
-            self.out_sample = None
-        else:
-            sample_num = 300
-            out_vec = cdf[out_spec].to_numpy()
-            self.out_vec = out_vec
-            out_indices = np.sort(np.unique(out_vec))
-            self.out_sample = []
-            for o in out_indices:
-                N = sum(out_vec==o)
-                if N>sample_num:
-                    sample = np.random.choice(range(N),sample_num,replace=False)
-                    self.out_sample.append(sample)
-                else:
-                    self.out_sample.append(range(N))
-
-
 
     ### Method - Set parameters from a numpy vector 
         # Input: parameter_vector, numpy vector with appropriate length

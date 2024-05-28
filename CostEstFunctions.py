@@ -1,5 +1,6 @@
 import numpy as np
 import scipy as sp
+import ModelFunctions
 import EstimationFunctions
 import ModelTypes
 
@@ -68,12 +69,24 @@ def estimate_costs(rate_spec,mbs_spec,cons_cost,bank_cost,discount_spec,first_st
     exp_rev = rev_h*prob_h + rev_s*prob_s
     exp_cost = estimated_hold_costs*prob_h +  (estimated_hold_costs+diff_cost)*prob_s
     margin = (exp_rev - exp_cost)/exp_rev
+    if any(estimated_hold_costs<=0):
+        print("Warning: Negative Costs",np.mean(estimated_hold_costs<=0))
+    #keep_index = (margin>0.2) & (estimated_hold_costs>1e-6)
+    return res#, keep_index
 
-    print("Negative Bounds",np.sum(estimated_hold_costs<=1e-6))
+def drop_low_margins(theta,cdf,mdf,mbsdf):
+    clist = EstimationFunctions.consumer_object_list(theta,cdf,mdf,mbsdf)
+    N = len(clist)
+    margins = np.zeros(N)
+    for i in range(N):
+        cons = clist[i]
+        dat = cons['dat']
+        J = dat.X.shape[0]
+        prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(dat.r_obs,J),dat,theta,cons['mbs'])
+        margins[i] = prof[dat.lender_obs]/dprof[dat.lender_obs]
     
-    keep_index = (margin>0.2) & (estimated_hold_costs>1e-6)
-    return res, keep_index
-
+    keep_index = margins>(-1/theta.alpha_min)
+    return keep_index
 
 
 # def f_grad(x):

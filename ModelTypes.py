@@ -132,7 +132,7 @@ class Parameters:
         self.gamma_ZH_ind = None
 
 
-    def __init__(self,
+    def __init__(self,cdf, # Consumer Data
                  demand_spec,cost_spec,cons_spec,discount_spec, # Model Specifications
                  mbs_spec,mbs_coupons, # Model Specifications
                  rate_spec,lender_spec,market_spec,time_spec,out_spec, # Model Specifications
@@ -172,6 +172,10 @@ class Parameters:
         self.gamma_WH_ind = range(len(demand_spec),len(demand_spec)+len(cost_spec)) # Second - Bank cost parameters
         self.gamma_ZH_ind = range(len(demand_spec)+len(cost_spec),len(demand_spec)+len(cost_spec)+len(cons_spec)) # Last - Consumer-loan specific parameters
         self.gamma_ind = range(len(demand_spec),len(demand_spec)+len(cost_spec)+len(cons_spec)) # All Cost Parameters
+
+    #### Set index for out share vector
+    def construct_out_index(self,cdf):
+        self.out_vec = cdf[self.out_spec].to_numpy()
 
     ### Method - Set parameters from a numpy vector 
         # Input: parameter_vector, numpy vector with appropriate length

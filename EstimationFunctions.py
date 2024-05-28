@@ -63,6 +63,7 @@ def consumer_object_list(theta,cdf,mdf,mbsdf):
     for i in range(cdf.shape[0]):
         dat,mbs = consumer_subset(i,theta,cdf,mdf,mbsdf)
         consumer_list.append({'dat':dat,'mbs':mbs})
+    theta.construct_out_index(cdf)
     return consumer_list
 
 ###### Consumer Level Likelihood Evaluation Functions #######

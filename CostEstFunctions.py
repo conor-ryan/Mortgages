@@ -56,7 +56,7 @@ def estimate_costs(rate_spec,mbs_spec,cons_cost,bank_cost,discount_spec,first_st
     # Starting parameter guess
     cost_parameters = np.zeros(cost_data.shape[1])
     # Set the guess on intercept term to be small, non-zero
-    cost_parameters[0] = 0.1 
+    # cost_parameters[0] = 0.1 
     
     # Solve optimization problem
     res = sp.optimize.minimize(f_obj,cost_parameters,method='SLSQP',

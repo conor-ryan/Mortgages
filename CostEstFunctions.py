@@ -5,7 +5,7 @@ import EstimationFunctions
 import ModelTypes
 
 
-def consumer_revenue(cost_data,HTM_rate_rev,MBS_rate_rev,first_stage,return_all=False):
+def consumer_revenue(cost_data,HTM_rate_rev,MBS_rate_rev,first_stage):
     # Re-compute estimated HTM - OTD cost difference
     diff_cost_pars = np.concatenate((first_stage.gamma_WS,first_stage.gamma_ZS))
     diff_costs = np.dot(cost_data,diff_cost_pars)
@@ -25,10 +25,7 @@ def consumer_revenue(cost_data,HTM_rate_rev,MBS_rate_rev,first_stage,return_all=
 
     # Gross revenue expectation w.r.t. balance sheet shock
     ERev = prob_h*rev_h + prob_s*rev_s
-    if return_all:
-        return rev_h.to_numpy(),MBS_rate_rev.to_numpy(), diff_costs, prob_h.to_numpy(), prob_s.to_numpy()
-    else:
-        return ERev.to_numpy()
+    return ERev.to_numpy()
 
 
 
@@ -45,7 +42,7 @@ def estimate_costs(rate_spec,mbs_spec,cons_cost,bank_cost,discount_spec,first_st
     revenues = consumer_revenue(cost_data,HTM_rate_rev,MBS_rate_rev,first_stage)
     
     # Define constraints: 0 <= predicted marginal cost <= expected originated revenue
-    lin_const = sp.optimize.LinearConstraint(cost_data,np.repeat(-np.Inf,len(revenues)),revenues)
+    lin_const = sp.optimize.LinearConstraint(cost_data,np.repeat(0.0,len(revenues)),revenues)
 
     # Define a wrapper for predicted marginal cost
     # Objective value: normalization of sum squared cost
@@ -64,15 +61,11 @@ def estimate_costs(rate_spec,mbs_spec,cons_cost,bank_cost,discount_spec,first_st
                                 options={'disp':True,'ftol':1e-9})
     
     # Create an index of all observations where estimated cost is not roughly equal to expected revenue.
-    rev_h,rev_s,diff_cost,prob_h,prob_s = consumer_revenue(cost_data,HTM_rate_rev,MBS_rate_rev,first_stage,return_all=True)
     estimated_hold_costs = np.dot(cost_data,res.x)
-    exp_rev = rev_h*prob_h + rev_s*prob_s
-    exp_cost = estimated_hold_costs*prob_h +  (estimated_hold_costs+diff_cost)*prob_s
-    margin = (exp_rev - exp_cost)/exp_rev
     if any(estimated_hold_costs<=0):
         print("Warning: Negative Costs",np.mean(estimated_hold_costs<=0))
-    #keep_index = (margin>0.2) & (estimated_hold_costs>1e-6)
-    return res#, keep_index
+
+    return res
 
 def drop_low_margins(theta,cdf,mdf,mbsdf):
     clist = EstimationFunctions.consumer_object_list(theta,cdf,mdf,mbsdf)

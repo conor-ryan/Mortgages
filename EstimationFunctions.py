@@ -44,6 +44,10 @@ def consumer_subset(i,theta,cdf,mdf,mbsdf):
     # Create consumer data object
     dat = ModelTypes.Data(i,X_i,W_i,D_i,Z_i,lender_obs,r_obs,out) 
 
+    prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(r_obs,X_i.shape[0]),dat,theta,mbs)
+    obs_margin = prof[lender_obs]/dprof[lender_obs]
+    dat.skip = obs_margin>(-1/theta.alpha_min)*1.5
+
     return dat, mbs
 
 
@@ -60,10 +64,13 @@ def consumer_subset(i,theta,cdf,mdf,mbsdf):
 
 def consumer_object_list(theta,cdf,mdf,mbsdf):
     consumer_list = list()
+    skip_tracking = np.zeros(cdf.shape[0])
     for i in range(cdf.shape[0]):
         dat,mbs = consumer_subset(i,theta,cdf,mdf,mbsdf)
         consumer_list.append({'dat':dat,'mbs':mbs})
+        skip_tracking[i] = dat.skip
     theta.construct_out_index(cdf)
+    print("Fraction Dropped on Margin Threshold",np.mean(skip_tracking))
     return consumer_list
 
 ###### Consumer Level Likelihood Evaluation Functions #######
@@ -80,6 +87,13 @@ def consumer_object_list(theta,cdf,mdf,mbsdf):
 # itr - number of interations to solve equilibrium 
 def consumer_likelihood_eval(theta,d,m,model="base"):
     # Initial attempt to solve the equilibrium given current parameter guess
+    if d.skip:
+        ll_i = 0.0
+        q0 = 1e-10
+        prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(d.r_obs,d.X.shape[0]),d,theta,m)
+        alpha = -dprof[d.lender_obs]/prof[d.lender_obs]
+        return ll_i, q0, alpha,1
+    
     alpha, r_eq, itr,success = EquilibriumFunctions.solve_eq_r_optim(d.r_obs,d.lender_obs,d,theta,m,model=model)
     if not success: # Fast algorithm failed to converge, use robust algorithm
         # Robust equilibrium solution
@@ -116,6 +130,17 @@ def consumer_likelihood_eval(theta,d,m,model="base"):
 # itr - number of interations to solve equilibrium 
 
 def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
+
+    if d.skip:
+        ll_i = 0.0
+        dll_i = 0.0
+        q0 = 1e-10
+        dq0 = np.zeros(len(theta.beta_x))
+        da = np.zeros(len(theta.beta_x))
+        prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(d.r_obs,d.X.shape[0]),d,theta,m)
+        alpha = -dprof[d.lender_obs]/prof[d.lender_obs]
+        return ll_i, dll_i, q0, dq0, alpha, da, 0
+
      # Initial attempt to solve the equilibrium given current parameter guess
     alpha, r_eq, itr,success = EquilibriumFunctions.solve_eq_r_optim(d.r_obs,d.lender_obs,d,theta,m,model=model)
     if not success: # Fast algorithm failed to converge, use robust algorithm
@@ -173,6 +198,18 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
 # d2ll_i - consumer contribution to hessian of the log likelihood
 # itr - number of interations to solve equilibrium 
 def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
+    if d.skip:
+        ll_i = 0.0
+        dll_i = 0.0
+        d2ll_i = 0.0
+        q0 = 1e-10
+        dq0 = np.zeros(len(theta.beta_x))
+        da = np.zeros(len(theta.beta_x))
+        d2q0 = np.zeros((len(theta.beta_x),len(theta.beta_x)))
+        prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(d.r_obs,d.X.shape[0]),d,theta,m)
+        alpha = -dprof[d.lender_obs]/prof[d.lender_obs]
+        return ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,0,0
+
      # Initial attempt to solve the equilibrium given current parameter guess
     alpha, r_eq, itr,success,ab = EquilibriumFunctions.solve_eq_r_optim(d.r_obs,d.lender_obs,d,theta,m,model=model,return_bound=True)
     if not success: # Fast algorithm failed to converge, use robust algorithm

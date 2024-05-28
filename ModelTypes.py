@@ -19,6 +19,10 @@ class Data:
         self.lender_obs = lender # Observed Lender Index
         self.r_obs = r # Observed Rate Index 
         self.out = out # Consumer-Specific Probability of Choosing the Outside Option
+        
+        self.skip = False # Whether this observation should be skipped in estimation
+
+    
 
 ## MBS Price Function Class
 # An object that translates MBS coupon rates and prices into a smooth, pricing function

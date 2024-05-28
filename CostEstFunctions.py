@@ -44,7 +44,7 @@ def estimate_costs(rate_spec,mbs_spec,cons_cost,bank_cost,discount_spec,first_st
     revenues = consumer_revenue(cost_data,HTM_rate_rev,MBS_rate_rev,first_stage)
     
     # Define constraints: 0 <= predicted marginal cost <= expected originated revenue
-    lin_const = sp.optimize.LinearConstraint(cost_data,np.repeat(-np.Inf,len(revenues)),revenues)
+    lin_const = sp.optimize.LinearConstraint(cost_data,np.repeat(0.0,len(revenues)),revenues)
 
     # Define a wrapper for predicted marginal cost
     # Objective value: normalization of sum squared cost
@@ -68,8 +68,10 @@ def estimate_costs(rate_spec,mbs_spec,cons_cost,bank_cost,discount_spec,first_st
     exp_rev = rev_h*prob_h + rev_s*prob_s
     exp_cost = estimated_hold_costs*prob_h +  (estimated_hold_costs+diff_cost)*prob_s
     margin = (exp_rev - exp_cost)/exp_rev
+
+    print("Negative Bounds",np.sum(estimated_hold_costs<=0))
     
-    keep_index = margin>0.2
+    keep_index = (margin>0.2) & (estimated_hold_costs<=0)
     return res, keep_index
 
 

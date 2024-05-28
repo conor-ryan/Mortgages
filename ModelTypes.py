@@ -212,7 +212,7 @@ class Parameters:
 
 
 def Par_sim(beta_x,gamma_WH,gamma_ZH,beta_d,sigma,gamma_WS,gamma_ZS):
-        p = Parameters(None,[None],[None],[None],[None],
+        p = Parameters([None],[None],[None],[None],
                    [None],[None],
                    [None],[None],[None],[None],[None],
                    FirstStageFunctions.ParameterFirstStage(None,None,None,None),

@@ -44,9 +44,10 @@ def consumer_subset(i,theta,cdf,mdf,mbsdf):
     # Create consumer data object
     dat = ModelTypes.Data(i,X_i,W_i,D_i,Z_i,lender_obs,r_obs,out) 
 
+    # Skip consumers that are below a certain margin threshold
     prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(r_obs,X_i.shape[0]),dat,theta,mbs)
     obs_margin = prof[lender_obs]/dprof[lender_obs]
-    dat.skip = obs_margin<(-1/theta.alpha_min)*1.5
+    dat.skip = obs_margin<(-1/theta.alpha_min)
 
     return dat, mbs
 

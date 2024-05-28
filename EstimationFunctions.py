@@ -206,6 +206,7 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
         dq0 = np.zeros(len(theta.all()))
         da = np.zeros(len(theta.all()))
         d2q0 = np.zeros((len(theta.all()),len(theta.all())))
+        d2a = np.zeros((len(theta.all()),len(theta.all())))
         prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(d.r_obs,d.X.shape[0]),d,theta,m)
         alpha = -dprof[d.lender_obs]/prof[d.lender_obs]
         return ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,0,0

@@ -102,19 +102,19 @@ def deriv2_test_total_shares(d,theta,m):
         #         D[i,j,l] = der[j,l]
     return D
 
-def deriv_test_likelihood(vec,theta,cdf,mdf,mbsdf):
+def deriv_test_likelihood(vec,theta,clist):
     grad = np.zeros(len(vec))
     eps = 1e-8
     n = 0
     theta.set_demand(vec)
-    ll1 = EstimationFunctions.evaluate_likelihood(vec,theta,cdf,mdf,mbsdf)
+    ll1 = EstimationFunctions.evaluate_likelihood(vec,theta,clist)
     for i in range(len(vec)):
         vec_new = np.copy(vec)
         vec_new[i] = vec[i] + eps
-        ll2 = EstimationFunctions.evaluate_likelihood(vec_new,theta,cdf,mdf,mbsdf)
+        ll2 = EstimationFunctions.evaluate_likelihood(vec_new,theta,clist)
 
         vec_new[i] = vec[i] - eps
-        ll3 = EstimationFunctions.evaluate_likelihood(vec_new,theta,cdf,mdf,mbsdf)
+        ll3 = EstimationFunctions.evaluate_likelihood(vec_new,theta,clist)
 
         der = (ll2-ll3)/(2*eps)
         print(der)

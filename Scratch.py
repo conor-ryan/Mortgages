@@ -278,12 +278,13 @@ plt.scatter(-np.log(-a_vec),dist_uncond)
 plt.show()
 
 ## Likelihood Derivatives
-ll0 = evaluate_likelihood(res,theta,consumer_data,market_data,mbs_data)
-ll1, grad1 = evaluate_likelihood_gradient(res,theta,consumer_data,market_data,mbs_data)
+clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
+ll0 = evaluate_likelihood(res,theta,clist)
+ll1, grad1 = evaluate_likelihood_gradient(res,theta,clist)
 print(grad1)
 ll2, grad2,hess2,bfgs = evaluate_likelihood_hessian(res,theta,consumer_data,market_data,mbs_data)
 print(grad2)
-t1 = deriv_test_likelihood(res,theta,consumer_data,market_data,mbs_data)
+t1 = deriv_test_likelihood(res,theta,clist)
 t2 = num_hessian_likelihood(res,theta,consumer_data,market_data,mbs_data)
 
 print(np.max(np.abs((grad1-t1)/t1)))

@@ -29,34 +29,22 @@ def d_foc(r,alpha,d,theta,m,model="base"):
 
 
     # Linearized to isolate alpha and q
-    dEPidr = (dpi_dr)/(alpha*(1-q)) + pi
-
-    dFOC_dalpha = ( -(dpi_dr)/(alpha*(1-q))**2 ) * ( 1-q-alpha*dqdalpha )
+    dEPidr = (dpi_dr) + pi*(alpha*(1-q))
+    dFOC_dalpha = pi*((1-q) - alpha*dqdalpha)
+    # dFOC_dalpha = ( -(dpi_dr)/(alpha*(1-q))**2 ) * ( 1-q-alpha*dqdalpha )
 
 
     q_mat = np.tile(q,(len(q),1))
     q_mat_t = np.transpose(q_mat)
 
-    # ## dqdr
-    # q_mat = np.tile(q,(len(q),1))
-    # q_mat_t = np.transpose(q_mat)
-    # dqdr = -alpha*q_mat*q_mat_t
-    # np.fill_diagonal(dqdr,alpha*q*(1-q))
-
-    # dFOC_dr = np.zeros((len(q),len(q)))
-    # for i in range(len(q)):
-    #     for j in range(len(q)):
-    #         if i==j:
-    #             dFOC_dr[i,j] = ((dpi_dr[j])/(alpha*(1-q[j]))**2)*(alpha*dqdr[i,j]) + dpi_dr[j] + d2pi_dr2[j]/(alpha*(1-q[j]))
-    #         else:
-    #             dFOC_dr[i,j] = ((dpi_dr[j])/(alpha*(1-q[j]))**2)*(alpha*dqdr[i,j])
-
-
     ## Derivative of FOC_j w.r.t. r_k - Columns: FOC_j, Rows: r_k (der ) 
-    infra_mat = np.tile((dpi_dr),(len(q),1))
-    dFOC_dr = -(infra_mat/(1-q_mat)**2)*(q_mat*q_mat_t)
+    # infra_mat = np.tile((dpi_dr),(len(q),1))
+    dFOC_dr = np.tile(pi,(len(q),1))*(alpha**2)*(q_mat*q_mat_t)
 
-    diag_vals = (dpi_dr)*q/(1-q) + dpi_dr + d2pi_dr2/(alpha*(1-q))
+    # dFOC_dr = -(infra_mat/(1-q_mat)**2)*(q_mat*q_mat_t)
+    diag_vals = d2pi_dr2 + dpi_dr*(alpha*(1-q)) - pi*(alpha**2)*q*(1-q)
+    
+    # diag_vals = (dpi_dr)*q/(1-q) + dpi_dr + d2pi_dr2/(alpha*(1-q))
     np.fill_diagonal(dFOC_dr,diag_vals) 
 
     return dFOC_dalpha, dFOC_dr, dEPidr
@@ -87,24 +75,25 @@ def d_foc_all_parameters(r,alpha,d,theta,m,model="base"):
     dqdbeta_x = q_mat_x*(np.transpose(d.X) - np.transpose(np.tile(np.dot(np.transpose(d.X),q),(d.X.shape[0],1))) )
 
     # Linearized FOC to isolate alpha and q
-    # dEPidr = (dpi_dr)/(alpha*(1-q)) + pi
+    # dEPidr = (dpi_dr) + pi*(alpha*(1-q))
     
     ## Derivative of FOC w.r.t. Alpha
-    dFOC_dalpha = ( -(dpi_dr)/(alpha*(1-q))**2 ) * ( 1-q-alpha*dqdalpha )
+    dFOC_dalpha = pi*((1-q) - alpha*dqdalpha)
 
 
     ## Derivative of FOC w.r.t. beta_x - Columns: FOC_j, Rows: beta_xk
-    infra_mat = np.tile((dpi_dr),(dqdbeta_x.shape[0],1))
-    dFOC_dbeta_x = (infra_mat/(alpha*(1-q_mat_x)**2))*(dqdbeta_x)
+    # infra_mat = np.tile((dpi_dr),(dqdbeta_x.shape[0],1))
+    dFOC_dbeta_x = -pi*alpha*dqdbeta_x
+    # dFOC_dbeta_x = (infra_mat/(alpha*(1-q_mat_x)**2))*(dqdbeta_x)
 
     ## Derivative of FOC w.r.t. gamma - Columns: FOC_j, Rows: gamma_k
-    dFOC_dgamma = -np.transpose(np.concatenate((d.W,np.tile(d.Z,(5,1))),axis=1))
+    # dFOC_dgamma = -np.transpose(np.concatenate((d.W,np.tile(d.Z,(5,1))),axis=1))
+    dFOC_dgamma = -np.transpose(np.concatenate((d.W,np.tile(d.Z,(5,1))),axis=1))*(np.tile(alpha*(1-q),(d.W.shape[1] + d.Z.shape[0],1)))
 
     ## Derivative of FOC_j w.r.t. r_k - Columns: FOC_j, Rows: r_k (der ) 
-    infra_mat = np.tile((dpi_dr),(len(q),1))
-    dFOC_dr = -(infra_mat/(1-q_mat)**2)*(q_mat*q_mat_t)
+    dFOC_dr = np.tile(pi,(len(q),1))*(alpha**2)*(q_mat*q_mat_t)
 
-    diag_vals = (dpi_dr)*q/(1-q) + dpi_dr + d2pi_dr2/(alpha*(1-q))
+    diag_vals = d2pi_dr2 + dpi_dr*(alpha*(1-q)) - pi*(alpha**2)*q*(1-q)
     np.fill_diagonal(dFOC_dr,diag_vals) 
 
     return dFOC_dalpha, dFOC_dr, dFOC_dbeta_x, dFOC_dgamma
@@ -148,90 +137,127 @@ def d2_foc_all_parameters(r,alpha,d,theta,m,model="base"):
     
 
     ## Derivative of FOC w.r.t. Alpha
-    dFOC_dalpha = ( -(dpi_dr)/(alpha*(1-q))**2 ) * ( 1-q-alpha*dqdalpha )
-    d2FOC_dalpha2 = -(dpi_dr)*( (1/(alpha*(1-q))**2 )*( -dqdalpha - (dqdalpha + alpha*d2qdalpha2) ) + 
-      (-2/(alpha*(1-q))**3)*( 1-q-alpha*dqdalpha )**2)
+    dFOC_dalpha = pi*((1-q) - alpha*dqdalpha)
+    d2FOC_dalpha2 = pi*( -dqdalpha - dqdalpha - alpha*d2qdalpha2)
+    # d2FOC_dalpha2 = -(dpi_dr)*( (1/(alpha*(1-q))**2 )*( -dqdalpha - (dqdalpha + alpha*d2qdalpha2) ) + 
+    #   (-2/(alpha*(1-q))**3)*( 1-q-alpha*dqdalpha )**2)
     
     ## Derivative of FOC w.r.t. beta_x - Columns: FOC_j, Rows: beta_xk
-    infra_mat = np.tile((dpi_dr),(dqdbeta_x.shape[0],1))
-    dFOC_dbeta_x = (infra_mat/(alpha*(1-q_mat_x)**2))*(dqdbeta_x)
+    # infra_mat = np.tile((dpi_dr),(dqdbeta_x.shape[0],1))
+    dFOC_dbeta_x = -pi*alpha*dqdbeta_x
 
     ## Second Derivative of FOC w.r.t. beta_xk & alpha -  Columns: FOC_j, Rows: beta_xk
     r_mat = np.tile(r-r_avg,(K,1))
-    d2FOC_dbetadalpha =infra_mat*( (1/(alpha*(1-q_mat_x)**2))*(r_mat*dqdbeta_x - xr_mat*q_mat_x ) - 
-                             (1/(alpha**2*(1-q_mat_x)**3)*(dqdbeta_x)*(1-q_mat_x-2*alpha*r_mat*q_mat_x)) ) 
+    d2FOC_dbetadalpha = -np.tile(pi,(K,1))*(dqdbeta_x + alpha*(x_mat*np.tile(dqdalpha,(K,1)) - xr_mat*q_mat_x) )
+
+
+    # d2FOC_dbetadalpha =infra_mat*( (1/(alpha*(1-q_mat_x)**2))*(r_mat*dqdbeta_x - xr_mat*q_mat_x ) - 
+                            #  (1/(alpha**2*(1-q_mat_x)**3)*(dqdbeta_x)*(1-q_mat_x-2*alpha*r_mat*q_mat_x)) ) 
 
 
     ##Second Derivative of FOC w.r.t. beta_xk & beta_xl - dim: (J x K x K)
-    d2FOC_dbeta_x2 = np.zeros((J,K,K))
-    infra = dpi_dr
-    for j in range(J):
-        d2FOC_dbeta_x2[j,:,:] = infra[j]/(alpha*(1-q[j])**2)*d2qdbeta_x[:,:,j] + \
-                                        2*infra[j]/(alpha*(1-q[j])**3)* np.outer(dqdbeta_x[:,j],dqdbeta_x[:,j])
-        
+    d2FOC_dbeta_x2 = -np.transpose(np.tile(pi,(K,K,1))*alpha*d2qdbeta_x)
+    # d2FOC_dbeta_x2 = np.zeros((J,K,K))
+    # infra = dpi_dr
+    # for j in range(J):
+    #     d2FOC_dbeta_x2[j,:,:] = infra[j]/(alpha*(1-q[j])**2)*d2qdbeta_x[:,:,j] + \
+    #                                     2*infra[j]/(alpha*(1-q[j])**3)* np.outer(dqdbeta_x[:,j],dqdbeta_x[:,j])
+    #     d2FOC_dbeta_x2[j,:,:]  = -pi*alpha*d2qdbeta_x[:,:,j]
     
     ## Derivative of FOC w.r.t. gamma - Columns: FOC_j, Rows: gamma_k
-    dFOC_dgamma = -np.transpose(np.concatenate((d.W,np.tile(d.Z,(5,1))),axis=1))
+    dFOC_dgamma = -np.transpose(np.concatenate((d.W,np.tile(d.Z,(5,1))),axis=1))*(np.tile(alpha*(1-q),(d.W.shape[1] + d.Z.shape[0],1)))
+
 
     ## Derivative of FOC_j w.r.t. r_k - Columns: FOC_j, Rows: r_k (der ) 
     infra_mat = np.tile((dpi_dr),(len(q),1))
-    dFOC_dr = -(infra_mat/(1-q_mat)**2)*(q_mat*q_mat_t)
+    dFOC_dr = np.tile(pi,(len(q),1))*(alpha**2)*(q_mat*q_mat_t)
 
-    diag_vals = (dpi_dr)*q/(1-q) + dpi_dr + d2pi_dr2/(alpha*(1-q))
+    diag_vals = d2pi_dr2 + dpi_dr*(alpha*(1-q)) - pi*(alpha**2)*q*(1-q)
     np.fill_diagonal(dFOC_dr,diag_vals) 
 
     ## Derivative of FOC_j w.r.t. r_k & alpha - Columns: FOC_j, Rows: r_k (der )
     r_mat = np.tile(r-r_avg,(J,1)) 
-    r_mat_t = np.transpose(r_mat)
-    d2FOC_drdalpha = infra_mat*(-(1/(1-q_mat)**2)*(q_mat*q_mat_t*(r_mat + r_mat_t)) -
-                                (2/(1-q_mat)**3)*(q_mat**2*q_mat_t*r_mat))
+    # r_mat_t = np.transpose(r_mat)
 
-    diag_vals = ((dpi_dr)*(dqdalpha/(1-q) + q*dqdalpha/(1-q)**2) - 
-                    (1/(alpha*(1-q) )**2)*(1-q-alpha*dqdalpha)*(d2pi_dr2 ) )
+    # d2FOC_drdalpha = infra_mat*(-(1/(1-q_mat)**2)*(q_mat*q_mat_t*(r_mat + r_mat_t)) -
+    #                             (2/(1-q_mat)**3)*(q_mat**2*q_mat_t*r_mat))
+
+    # diag_vals = ((dpi_dr)*(dqdalpha/(1-q) + q*dqdalpha/(1-q)**2) - 
+    #                 (1/(alpha*(1-q) )**2)*(1-q-alpha*dqdalpha)*(d2pi_dr2 ) )
+    # np.fill_diagonal(d2FOC_drdalpha,diag_vals) 
+
+    d2FOC_drdalpha = pi*(2*alpha*q_mat*q_mat_t + (alpha**2)*(np.outer(dqdalpha,q) + np.transpose(np.outer(dqdalpha,q))))
+    # diag_vals = dpi_dr*((1-q) - alpha*dqdalpha) + pi*(-alpha*q*(1-q)-alpha**2*r_mat*q*(1-q))
+    diag_vals = dpi_dr*(1-q) - dpi_dr*alpha*dqdalpha - 2*pi*alpha*q*(1-q) - pi*alpha**2*(dqdalpha*(1-2*q))
     np.fill_diagonal(d2FOC_drdalpha,diag_vals) 
-
     ## Derivative of FOC_j w.r.t. r_k & r_l - dim: (FOC x r_k x r_l)
+
     d2FOC_dr2 = np.zeros((J,J,J))
     infra = dpi_dr
     for j in range(J):
-        d2FOC_dr2[j,:,:] = infra[j]*( (2*alpha*q[j]*q_mat*q_mat_t)/(1-q[j])**2 + 
-                                     (2*alpha*q[j]**2*q_mat*q_mat_t)/(1-q[j])**3 )
+        d2FOC_dr2[j,:,:] = -pi[j]*(alpha**3)*2*q[j]*q_mat*q_mat_t
         
 
 
-        j_sym = infra[j]*(-alpha*q[j]*q/(1-q[j])-alpha*q[j]**2*q/(1-q[j])**2) - \
-                            (q[j]*q/(1-q[j])**2)*(d2pi_dr2[j])
+        j_sym = dpi_dr[j]*(alpha**2)*q[j]*q - pi[j]*(alpha**3)*q*q[j]*(2*q[j]-1)
         
 
         d2FOC_dr2[j,j,:] = j_sym
         d2FOC_dr2[j,:,j] = j_sym
 
-        r_diag_vals = -infra[j]*( (alpha*q[j]*q*(1-2*q))/(1-q[j])**2 - 
-                                (2*alpha*(q[j]*q)**2)/(1-q[j])**3 )
+        r_diag_vals = pi[j]*(alpha**3)*q[j]*q*(1-2*q)
         np.fill_diagonal(d2FOC_dr2[j,:,:],r_diag_vals) 
 
 
-        d2FOC_dr2[j,j,j] = infra[j]*(alpha*q[j]+alpha*q[j]**2/(1-q[j]) ) +\
-                            2*q[j]/(1-q[j])*(d2pi_dr2[j]) +\
-                            d2pi_dr2[j] +\
-                            d3pi_dr3[j]/(alpha*(1-q[j]))
+        d2FOC_dr2[j,j,j] = d3pi_dr3[j] + d2pi_dr2[j]*(alpha*(1-q[j])) + \
+                                    -2*dpi_dr[j]*(alpha**2)*q[j]*(1-q[j]) +\
+                                    -pi[j]*(alpha**3)*q[j]*(1-q[j])*(1-2*q[j])
+    # for j in range(J):
+    #     d2FOC_dr2[j,:,:] = infra[j]*( (2*alpha*q[j]*q_mat*q_mat_t)/(1-q[j])**2 + 
+    #                                  (2*alpha*q[j]**2*q_mat*q_mat_t)/(1-q[j])**3 )
+        
+
+
+    #     j_sym = infra[j]*(-alpha*q[j]*q/(1-q[j])-alpha*q[j]**2*q/(1-q[j])**2) - \
+    #                         (q[j]*q/(1-q[j])**2)*(d2pi_dr2[j])
+        
+
+    #     d2FOC_dr2[j,j,:] = j_sym
+    #     d2FOC_dr2[j,:,j] = j_sym
+
+    #     r_diag_vals = -infra[j]*( (alpha*q[j]*q*(1-2*q))/(1-q[j])**2 - 
+    #                             (2*alpha*(q[j]*q)**2)/(1-q[j])**3 )
+    #     np.fill_diagonal(d2FOC_dr2[j,:,:],r_diag_vals) 
+
+
+    #     d2FOC_dr2[j,j,j] = infra[j]*(alpha*q[j]+alpha*q[j]**2/(1-q[j]) ) +\
+    #                         2*q[j]/(1-q[j])*(d2pi_dr2[j]) +\
+    #                         d2pi_dr2[j] +\
+    #                         d3pi_dr3[j]/(alpha*(1-q[j]))
         
     ## Derivative of FOC_j w.r.t. r_k & beta_xl - dim: (FOC x r_k x beta_xl)
     d2FOC_drdbeta = np.zeros((J,J,K))
-    infra = dpi_dr
+    # infra = dpi_dr
     # x_mat_t = np.transpose(x_mat)
     q_mat_x_t = np.transpose(q_mat_x)
     for j in range(J):
         # x_mat_k = np.tile(x_mat[:,j],(J,1))
         dqdb_j = np.tile(dqdbeta_x[:,j],(J,1))
         
-        # d2FOC_drdbeta[j,:,:] = -infra[j]*( (1/(1-q[j])**2)*q[j]*q_mat_x_t*(x_mat_t + x_mat_k) + 
-        #                                     (2/(1-q[j]**3)*q[j]**2*q_mat_x_t*x_mat_k))
-        d2FOC_drdbeta[j,:,:] = -infra[j]*( (1/(1-q[j])**2)*(dqdb_j*q_mat_x_t + np.transpose(dqdbeta_x)*q[j]  ) + 
-                                            (2/(1-q[j])**3)*q[j]*q_mat_x_t*dqdb_j)
+        d2FOC_drdbeta[j,:,:] = pi[j]*alpha**2*(dqdb_j*q_mat_x_t + np.transpose(dqdbeta_x)*q[j]  ) 
         
-        d2FOC_drdbeta[j,j,:] = infra[j]*( dqdbeta_x[:,j]/(1-q[j])*(1 + q[j]/(1-q[j])) ) +\
-                                dqdbeta_x[:,j]/(alpha*(1-q[j])**2)*(d2pi_dr2[j])
+        d2FOC_drdbeta[j,j,:] = -dpi_dr[j]*(alpha)*dqdbeta_x[:,j]- pi[j]*(alpha**2)*dqdbeta_x[:,j]*(1-2*q[j])
+    # for j in range(J):
+    #     # x_mat_k = np.tile(x_mat[:,j],(J,1))
+    #     dqdb_j = np.tile(dqdbeta_x[:,j],(J,1))
+        
+    #     # d2FOC_drdbeta[j,:,:] = -infra[j]*( (1/(1-q[j])**2)*q[j]*q_mat_x_t*(x_mat_t + x_mat_k) + 
+    #     #                                     (2/(1-q[j]**3)*q[j]**2*q_mat_x_t*x_mat_k))
+    #     d2FOC_drdbeta[j,:,:] = -infra[j]*( (1/(1-q[j])**2)*(dqdb_j*q_mat_x_t + np.transpose(dqdbeta_x)*q[j]  ) + 
+    #                                         (2/(1-q[j])**3)*q[j]*q_mat_x_t*dqdb_j)
+        
+    #     d2FOC_drdbeta[j,j,:] = infra[j]*( dqdbeta_x[:,j]/(1-q[j])*(1 + q[j]/(1-q[j])) ) +\
+    #                             dqdbeta_x[:,j]/(alpha*(1-q[j])**2)*(d2pi_dr2[j])
 
     d2FOC_dendo2 = np.copy(d2FOC_dr2)
     d2FOC_dendo2[:,d.lender_obs,:] = np.transpose(d2FOC_drdalpha)
@@ -250,8 +276,8 @@ def d2_foc_all_parameters(r,alpha,d,theta,m,model="base"):
     dFOC_dendo[:,d.lender_obs] = dFOC_dalpha
 
     dFOC_dpar = np.transpose(np.concatenate((dFOC_dbeta_x,dFOC_dgamma),axis=0))
-    # return dFOC_dalpha, dFOC_dr, dFOC_dbeta_x,dFOC_dgamma, d2FOC_dalpha2, d2FOC_dr2,d2FOC_drdalpha,d2FOC_dbeta_x2,d2FOC_dbetadalpha,d2FOC_drdbeta
-    return dFOC_dendo, dFOC_dpar, d2FOC_dendo2,d2FOC_dendodpar,d2FOC_dpar2
+    return dFOC_dalpha, dFOC_dr, dFOC_dbeta_x,dFOC_dgamma, d2FOC_dalpha2, d2FOC_dr2,d2FOC_drdalpha,d2FOC_dbeta_x2,d2FOC_dbetadalpha,d2FOC_drdbeta
+    # return dFOC_dendo, dFOC_dpar, d2FOC_dendo2,d2FOC_dendodpar,d2FOC_dpar2
 
 
 def share_parameter_second_derivatives(r,alpha,d,theta,m,model="base"):

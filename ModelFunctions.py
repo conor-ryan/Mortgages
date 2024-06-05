@@ -338,8 +338,8 @@ def expected_foc_nonlinear(r,alpha,d,theta,m,model="base"):
     q = market_shares(r,alpha,d,theta)
 
     # Deriviative of profit w.r.t. own rates
-    dEPidr = (dpi_dr)*q + (alpha*q*(1-q))*(pi)
-
+    # dEPidr = (dpi_dr)*q + (alpha*q*(1-q))*(pi)
+    dEPidr = (dpi_dr) + (alpha*(1-q))*(pi)
  
     return dEPidr
 

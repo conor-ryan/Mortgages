@@ -84,19 +84,18 @@ true_first_stage = ParameterFirstStage(0.04,np.array([0.5,0.25]),
 cost_spec = bank_spec + consumer_spec
 # res,keep_index = estimate_costs(cost_spec,theta,consumer_data,mbs_data)
 
-cost_res,keep_index = estimate_costs(rate_spec,mbs_price,consumer_spec,bank_spec,discount_spec,
+cost_res = estimate_costs(rate_spec,mbs_price,consumer_spec,bank_spec,discount_spec,
                                 true_first_stage,consumer_data)
 
 
-consumer_data = consumer_data[keep_index]
-pd.DataFrame(consumer_data).to_csv("refresh.csv",index=False)
-consumer_data = pd.read_csv("refresh.csv")
-# true_parameters = np.array([2.3,2.1, 1.9, 1.7,1.5,200.0, # Beta_x
-#                    -0.01,-0.005,0.002, #Gamma_WH
-#                    0.32,-1e-4,-1e-4,1e-4,0.00,0.005,0.00,0.1]) # Gamma_ZH
+# consumer_data = consumer_data[keep_index]
+# pd.DataFrame(consumer_data).to_csv("refresh.csv",index=False)
+# consumer_data = pd.read_csv("refresh.csv")
+# # true_parameters = np.array([2.3,2.1, 1.9, 1.7,1.5,200.0, # Beta_x
+# #                    -0.01,-0.005,0.002, #Gamma_WH
+# #                    0.32,-1e-4,-1e-4,1e-4,0.00,0.005,0.00,0.1]) # Gamma_ZH
 
-theta = Parameters(consumer_data,
-                   bank_dem_spec,bank_cost_spec,consumer_cost_spec,discount_spec,
+theta = Parameters(bank_dem_spec,bank_cost_spec,consumer_cost_spec,discount_spec,
                    mbs_spec,mbs_coupons,
                    rate_spec,lender_spec,market_spec,time_spec,outside_share_index,
                    true_first_stage,

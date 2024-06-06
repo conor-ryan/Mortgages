@@ -731,6 +731,9 @@ def estimate_GA(x,theta,clist,parallel=False,num_workers=0,gtol=1e-6,xtol=1e-15,
 
     # Initial evaluation of likelihood (ll_k) and gradient (g_k)
     ll_k, g_k = f_grad(x)
+    print("Starting Parameters:",x[test_index])
+    print("Starting Value:",ll_k)
+    print("Starting Gradient:",g_k[test_index])
     
     #Initial step size
     alpha = 1e-3/np.max(np.abs(g_k[test_index]))
@@ -749,6 +752,10 @@ def estimate_GA(x,theta,clist,parallel=False,num_workers=0,gtol=1e-6,xtol=1e-15,
         # Evaluation of likelihood and gradient at new candidate vector
         ll_test, g_test = f_grad(x_test)
         
+        print("Parameters:",x_test[test_index])
+        print("Value:",ll_test)
+        print("Gradient:",g_test[test_index])
+        
         # Theoretically, a small enough step should always increase the likelihood
         # If likelihood is lower at a given step, shrink until it is an ascending step
         while ll_test<ll_k:
@@ -759,6 +766,9 @@ def estimate_GA(x,theta,clist,parallel=False,num_workers=0,gtol=1e-6,xtol=1e-15,
 
             # Re-evaluate likelihood and gradient
             ll_test,g_test = f_grad(x_test)
+            print("Parameters:",x_test[test_index])
+            print("Value:",ll_test)
+            print("Gradient:",g_test[test_index])
             if np.max(np.abs(s_k))<xtol:
                 print("GA: reached minimum step size")
                 return ll_k,x

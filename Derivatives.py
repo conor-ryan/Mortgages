@@ -277,8 +277,8 @@ def d2_foc_all_parameters(r,alpha,d,theta,m,model="base"):
     dFOC_dendo[:,d.lender_obs] = dFOC_dalpha
 
     dFOC_dpar = np.transpose(np.concatenate((dFOC_dbeta_x,dFOC_dgamma),axis=0))
-    return dFOC_dalpha, dFOC_dr, dFOC_dbeta_x,dFOC_dgamma, d2FOC_dalpha2, d2FOC_dr2,d2FOC_drdalpha,d2FOC_dbeta_x2,d2FOC_dbetadalpha,d2FOC_drdbeta
-    # return dFOC_dendo, dFOC_dpar, d2FOC_dendo2,d2FOC_dendodpar,d2FOC_dpar2
+    # return dFOC_dalpha, dFOC_dr, dFOC_dbeta_x,dFOC_dgamma, d2FOC_dalpha2, d2FOC_dr2,d2FOC_drdalpha,d2FOC_dbeta_x2,d2FOC_dbetadalpha,d2FOC_drdbeta
+    return dFOC_dendo, dFOC_dpar, d2FOC_dendo2,d2FOC_dendodpar,d2FOC_dpar2
 
 
 def share_parameter_second_derivatives(r,alpha,d,theta,m,model="base"):

@@ -94,6 +94,8 @@ true_parameters = np.array([9.3,9.1, 8.9, 8.7,8.5,0])#, # Beta_x
 
                 
 res = np.zeros(len(true_parameters))
+res[0:6] = [ 8.51718423,  6.92391885 , 6.45555841,  5.14300395,  3.91491964 ,15.14973622]
+# res[0:6] = [ 8.5171436 ,  6.92343874 , 6.45546075,  5.14196039 , 3.91438836 ,15.14781011]
 clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 ll0 = evaluate_likelihood(res,theta,clist)
 ll1, grad1 = evaluate_likelihood_gradient(res,theta,clist)
@@ -145,6 +147,10 @@ start_parameters = np.zeros(len(true_parameters))
 
 # print("Estimate in Parallel")
 # f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,parallel=True,num_workers=NUM_WORKERS,gtol=1e-8)
+f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,
+                         gtol=1e-6,pre_condition=True,pre_cond_itr=30,
+                         max_step_size = 10)
+
 
 print("Estimate in Parallel with precondition")
 f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,parallel=True,num_workers=NUM_WORKERS,

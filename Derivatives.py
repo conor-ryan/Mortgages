@@ -29,22 +29,23 @@ def d_foc(r,alpha,d,theta,m,model="base"):
 
 
     # Linearized to isolate alpha and q
-    dEPidr = (dpi_dr) + pi*(alpha*(1-q))
-    dFOC_dalpha = pi*((1-q) - alpha*dqdalpha)
-    # dFOC_dalpha = ( -(dpi_dr)/(alpha*(1-q))**2 ) * ( 1-q-alpha*dqdalpha )
+    
+    dEPidr = (dpi_dr)/(alpha*(1-q)) + pi
+    # dEPidr = (dpi_dr) + pi*(alpha*(1-q))
+    # dFOC_dalpha = pi*((1-q) - alpha*dqdalpha)
+    dFOC_dalpha = ( -(dpi_dr)/(alpha*(1-q))**2 ) * ( 1-q-alpha*dqdalpha )
 
 
     q_mat = np.tile(q,(len(q),1))
     q_mat_t = np.transpose(q_mat)
 
     ## Derivative of FOC_j w.r.t. r_k - Columns: FOC_j, Rows: r_k (der ) 
-    # infra_mat = np.tile((dpi_dr),(len(q),1))
-    dFOC_dr = np.tile(pi,(len(q),1))*(alpha**2)*(q_mat*q_mat_t)
+    infra_mat = np.tile((dpi_dr),(len(q),1))
+    dFOC_dr = -(infra_mat/(1-q_mat)**2)*(q_mat*q_mat_t)
+    # dFOC_dr = np.tile(pi,(len(q),1))*(alpha**2)*(q_mat*q_mat_t)
 
-    # dFOC_dr = -(infra_mat/(1-q_mat)**2)*(q_mat*q_mat_t)
-    diag_vals = d2pi_dr2 + dpi_dr*(alpha*(1-q)) - pi*(alpha**2)*q*(1-q)
-    
-    # diag_vals = (dpi_dr)*q/(1-q) + dpi_dr + d2pi_dr2/(alpha*(1-q))
+    # diag_vals = d2pi_dr2 + dpi_dr*(alpha*(1-q)) - pi*(alpha**2)*q*(1-q)
+    diag_vals = (dpi_dr)*q/(1-q) + dpi_dr + d2pi_dr2/(alpha*(1-q))
     np.fill_diagonal(dFOC_dr,diag_vals) 
 
     return dFOC_dalpha, dFOC_dr, dEPidr

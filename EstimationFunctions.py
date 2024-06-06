@@ -78,7 +78,7 @@ def consumer_object_list(theta,cdf,mdf,mbsdf):
 ###### Function for skipped observations #######
 def skipped_consumer_likelihood(theta,d,m):
         ll_i = 0.0
-        dll_i = 0.0
+        dll_i = np.zeros(len(theta.all()))
         d2ll_i = 0.0
         q0 = 1e-10
         dq0 = np.zeros(len(theta.all()))

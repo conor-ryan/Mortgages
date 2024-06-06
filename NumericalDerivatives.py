@@ -186,10 +186,11 @@ def num_hessian_likelihood_small(theta,cdf,mdf,index):
     return D
 
 def deriv_test_alpha(r,alpha,d,theta,m):
-    f1 = expected_foc_nonlinear(r,alpha,d,theta,m)
+    x,y,f1 = d_foc(r,alpha,d,theta,m)
     eps = 1e-6
-    f2 = expected_foc_nonlinear(r,alpha+eps,d,theta,m)
-    f0 = expected_foc_nonlinear(r,alpha-eps,d,theta,m)
+    # f2 = expected_foc_nonlinear(r,alpha+eps,d,theta,m)
+    x,y,f2 = d_foc(r,alpha+eps,d,theta,m)
+    x,y,f0 = d_foc(r,alpha-eps,d,theta,m)
     der = (f2-f0)/(2*eps)
     return der
 
@@ -302,9 +303,11 @@ def deriv_test_rate_share(r,alpha,d,theta,m):
 def deriv_test_beta_x(r,alpha,d,theta,m):
     eps = 1e-6
     for i in range(len(theta.beta_x)):
-        f1 = expected_foc_nonlinear(r,alpha,d,theta,m)
+        # f1 = expected_foc_nonlinear(r,alpha,d,theta,m)
+        x,y,f1 = d_foc(r,alpha,d,theta,m)
         theta.beta_x[i] = theta.beta_x[i]+eps
-        f2 = expected_foc_nonlinear(r,alpha,d,theta,m)
+        # f2 = expected_foc_nonlinear(r,alpha,d,theta,m)
+        x,y,f2 = d_foc(r,alpha,d,theta,m)
         theta.beta_x[i] = theta.beta_x[i]-eps
         der = (f2-f1)/(eps)
         if i==0:
@@ -352,11 +355,13 @@ def deriv_test_gamma(r,alpha,d,theta,m):
     n = 0
     for i in range(start_ind,len(vec)):
         theta.set(vec)
-        f1 = expected_foc_nonlinear(r,alpha,d,theta,m)
+        # f1 = expected_foc_nonlinear(r,alpha,d,theta,m)
+        x,y,f1 = d_foc(r,alpha,d,theta,m)
         vec_new = np.copy(vec)
         vec_new[i] = vec[i] + eps
         theta.set(vec_new)
-        f2 = expected_foc_nonlinear(r,alpha,d,theta,m)
+        # f2 = expected_foc_nonlinear(r,alpha,d,theta,m)
+        x,y,f2 = d_foc(r,alpha,d,theta,m)
         der = (f2-f1)/(eps)
         if n==0:
             d_init = der

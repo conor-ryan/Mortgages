@@ -92,6 +92,13 @@ true_parameters = np.array([9.3,9.1, 8.9, 8.7,8.5,0])#, # Beta_x
                 #    0,0,0, #Gamma_WH
                 #    0.32,0]) # Gamma_ZH
 
+                
+res = np.zeros(len(true_parameters))
+clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
+ll0 = evaluate_likelihood(res,theta,clist)
+ll1, grad1 = evaluate_likelihood_gradient(res,theta,clist)
+print(grad1)
+
 # ### Run Timing Tests ####
 # clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 # print("Timing 2 Cores")

@@ -71,7 +71,7 @@ def r_sell_min(theta,d,m):
 # theta - parameter object
 def market_shares(r,alpha,d,theta,return_bound=False):
     # Bounds tolerance on shares so log() doesn't crash
-    tol = 1e-15
+    tol = 1e-12
 
     # Utility Specification
     util = np.dot(d.X,theta.beta_x) + alpha*r

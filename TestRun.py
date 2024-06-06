@@ -93,13 +93,13 @@ true_parameters = np.array([9.3,9.1, 8.9, 8.7,8.5,0])#, # Beta_x
                 #    0.32,0]) # Gamma_ZH
 
                 
-res = np.zeros(len(true_parameters))
-res[0:6] = [ 8.51718423,  6.92391885 , 6.45555841,  5.14300395,  3.91491964 ,15.14973622]
-# res[0:6] = [ 8.5171436 ,  6.92343874 , 6.45546075,  5.14196039 , 3.91438836 ,15.14781011]
-clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
-ll0 = evaluate_likelihood(res,theta,clist)
-ll1, grad1 = evaluate_likelihood_gradient(res,theta,clist)
-print(grad1)
+# res = np.zeros(len(true_parameters))
+# res[0:6] = [ 8.51718423,  6.92391885 , 6.45555841,  5.14300395,  3.91491964 ,15.14973622]
+# # res[0:6] = [ 8.5171436 ,  6.92343874 , 6.45546075,  5.14196039 , 3.91438836 ,15.14781011]
+# clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
+# ll0 = evaluate_likelihood(res,theta,clist)
+# ll1, grad1 = evaluate_likelihood_gradient(res,theta,clist)
+# print(grad1)
 
 # ### Run Timing Tests ####
 # clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)

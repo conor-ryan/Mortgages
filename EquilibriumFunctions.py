@@ -16,7 +16,7 @@ def solve_eq(alpha,d,theta,m,model="base",**kwargs):
 
     # Check if marginal cost pricing is an equilibrium 
     # Occurs if the probability of purchase is very small
-    err_check = ModelFunctions.expected_foc(r_min,alpha,d,theta,m,model=model)
+    err_check = ModelFunctions.expected_foc_nonlinear(r_min,alpha,d,theta,m,model=model)
     if np.sum(np.square(err_check))<1e-12:
         return r_min, 0
     
@@ -73,7 +73,7 @@ def solve_eq_robust(alpha,d,theta,m,model="base",**kwargs):
     r_min = ModelFunctions.min_rate(d,theta,m,model=model) 
     # Check if marginal cost pricing is an equilibrium 
     # Occurs if the probability of purchase is very small
-    err_check = ModelFunctions.expected_foc(r_min,alpha,d,theta,m,model=model)
+    err_check = ModelFunctions.expected_foc_nonlinear(r_min,alpha,d,theta,m,model=model)
     if np.sum(np.square(err_check))<1e-12:
         return r_min, 0
 
@@ -382,7 +382,7 @@ def solve_eq_optim(alpha,d,theta,m,model="base",**kwargs):
 
     # Check if marginal cost pricing is an equilibrium 
     # Occurs if the probability of purchase is very small
-    err_check = ModelFunctions.expected_foc(r_min,alpha,d,theta,m,model=model)
+    err_check = ModelFunctions.expected_foc_nonlinear(r_min,alpha,d,theta,m,model=model)
     if np.sum(np.square(err_check))<1e-12:
         return r_min, 0
     
@@ -454,7 +454,7 @@ def solve_eq_r_optim(r0,j,d,theta,m,model="base",return_bound=False):
         r = np.copy(x)
         r[j] = r0
         alpha = x[j]
-        f = ModelFunctions.expected_foc(r,alpha,d,theta,m,model=model)
+        # f = ModelFunctions.expected_foc_nonlinear(r,alpha,d,theta,m,model=model)
         g_alpha, grad, f = Derivatives.d_foc(r,alpha,d,theta,m,model=model)
         grad[j,:] = g_alpha
     

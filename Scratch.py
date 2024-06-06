@@ -123,6 +123,8 @@ clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 ll0 = evaluate_likelihood(res,theta,clist)
 ll1, grad1 = evaluate_likelihood_gradient(res,theta,clist)
 print(grad1)
+
+
 ll2, grad2,hess2,bfgs = evaluate_likelihood_hessian(res,theta,consumer_data,market_data,mbs_data)
 print(grad2)
 t1 = deriv_test_likelihood(res,theta,clist)

@@ -119,6 +119,21 @@ res = np.array([  16.6769731,    16.47231718 ,  15.8495233   , 16.13734006,   15
  -135.99767026])
 
 
+clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
+ll0 = evaluate_likelihood(res,theta,clist)
+ll1, grad1 = evaluate_likelihood_gradient(res,theta,clist)
+print(grad1)
+ll2, grad2,hess2,bfgs = evaluate_likelihood_hessian(res,theta,consumer_data,market_data,mbs_data)
+print(grad2)
+t1 = deriv_test_likelihood(res,theta,clist)
+t2 = num_hessian_likelihood(res,theta,consumer_data,market_data,mbs_data)
+
+print(np.max(np.abs((grad1-t1)/t1)))
+print(np.max(np.abs((hess2-t2)/t2)))
+
+
+
+
 # start = np.array([  9.44449934,   9.10344673,   9.15257351,   8.80094886,
 #          8.59485071, -36.19692372])
 # f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,4,gtol=1e-6,xtol=1e-15)
@@ -278,17 +293,7 @@ plt.scatter(-np.log(-a_vec),dist_uncond)
 plt.show()
 
 ## Likelihood Derivatives
-clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
-ll0 = evaluate_likelihood(res,theta,clist)
-ll1, grad1 = evaluate_likelihood_gradient(res,theta,clist)
-print(grad1)
-ll2, grad2,hess2,bfgs = evaluate_likelihood_hessian(res,theta,consumer_data,market_data,mbs_data)
-print(grad2)
-t1 = deriv_test_likelihood(res,theta,clist)
-t2 = num_hessian_likelihood(res,theta,consumer_data,market_data,mbs_data)
 
-print(np.max(np.abs((grad1-t1)/t1)))
-print(np.max(np.abs((hess2-t2)/t2)))
 
 test = np.array([31.26264496, 31.04771438, 30.7065461,  30.73619066, 31.11616083,  0.07386583,
   0.06117955 , 0.14697843,  0.20354394,  0.92667736, -3.24956762,  0.09978058,

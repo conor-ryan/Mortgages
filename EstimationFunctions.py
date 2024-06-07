@@ -497,6 +497,8 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
     d2ll = d2ll_micro + d2ll_macro
 
     # Print and output likelihood value
+    min_q0 = np.min(q0_list[q0_list>2e-10])
+    print("Minimum estimated purchase probability: ",min_q0)
     # print("Likelihood:",ll, "Macro ll component:", ll_macro)
     if np.sum(sbound_mean)>0:
         print("Fraction on Share Bound",np.mean(sbound_mean))

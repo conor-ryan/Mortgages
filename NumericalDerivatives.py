@@ -188,9 +188,10 @@ def num_hessian_likelihood_small(theta,cdf,mdf,index):
 def deriv_test_alpha(r,alpha,d,theta,m):
     x,y,f1 = d_foc(r,alpha,d,theta,m)
     eps = 1e-6
-    # f2 = expected_foc_nonlinear(r,alpha+eps,d,theta,m)
-    x,y,f2 = d_foc(r,alpha+eps,d,theta,m)
-    x,y,f0 = d_foc(r,alpha-eps,d,theta,m)
+    f2 = expected_foc_nonlinear(r,alpha+eps,d,theta,m)
+    # x,y,f2 = d_foc(r,alpha+eps,d,theta,m)
+    f0 = expected_foc_nonlinear(r,alpha-eps,d,theta,m)
+    # x,y,f0 = d_foc(r,alpha-eps,d,theta,m)
     der = (f2-f0)/(2*eps)
     return der
 
@@ -273,11 +274,13 @@ def deriv_test_rate(r,alpha,d,theta,m):
     for i in range(len(r)):
         r_test = np.copy(r)
         r_test[i] = r[i]+eps
-        x,y,f1 = d_foc(r_test,alpha,d,theta,m)
+        f1 = expected_foc_nonlinear(r_test,alpha+eps,d,theta,m)
+        # x,y,f1 = d_foc(r_test,alpha,d,theta,m)
 
         r_test = np.copy(r)
         r_test[i] = r[i]-eps
-        x,y,f2 = d_foc(r_test,alpha,d,theta,m)
+        f2 = expected_foc_nonlinear(r_test,alpha+eps,d,theta,m)
+        # x,y,f2 = d_foc(r_test,alpha,d,theta,m)
 
         der = (f1-f2)/(2*eps)
         D[i,:] = der
@@ -303,11 +306,11 @@ def deriv_test_rate_share(r,alpha,d,theta,m):
 def deriv_test_beta_x(r,alpha,d,theta,m):
     eps = 1e-6
     for i in range(len(theta.beta_x)):
-        # f1 = expected_foc_nonlinear(r,alpha,d,theta,m)
-        x,y,f1 = d_foc(r,alpha,d,theta,m)
+        f1 = expected_foc_nonlinear(r,alpha,d,theta,m)
+        # x,y,f1 = d_foc(r,alpha,d,theta,m)
         theta.beta_x[i] = theta.beta_x[i]+eps
-        # f2 = expected_foc_nonlinear(r,alpha,d,theta,m)
-        x,y,f2 = d_foc(r,alpha,d,theta,m)
+        f2 = expected_foc_nonlinear(r,alpha,d,theta,m)
+        # x,y,f2 = d_foc(r,alpha,d,theta,m)
         theta.beta_x[i] = theta.beta_x[i]-eps
         der = (f2-f1)/(eps)
         if i==0:
@@ -355,13 +358,13 @@ def deriv_test_gamma(r,alpha,d,theta,m):
     n = 0
     for i in range(start_ind,len(vec)):
         theta.set(vec)
-        # f1 = expected_foc_nonlinear(r,alpha,d,theta,m)
-        x,y,f1 = d_foc(r,alpha,d,theta,m)
+        f1 = expected_foc_nonlinear(r,alpha,d,theta,m)
+        # x,y,f1 = d_foc(r,alpha,d,theta,m)
         vec_new = np.copy(vec)
         vec_new[i] = vec[i] + eps
         theta.set(vec_new)
-        # f2 = expected_foc_nonlinear(r,alpha,d,theta,m)
-        x,y,f2 = d_foc(r,alpha,d,theta,m)
+        f2 = expected_foc_nonlinear(r,alpha,d,theta,m)
+        # x,y,f2 = d_foc(r,alpha,d,theta,m)
         der = (f2-f1)/(eps)
         if n==0:
             d_init = der
@@ -406,14 +409,14 @@ def deriv_test_cons_ll(vec,theta,d,m):
     grad = np.zeros(len(vec))
     eps = 1e-10
     theta.set_demand(vec)
-    # f0, x1, x2, x3, x4, x5, x6 = EstimationFunctions.consumer_likelihood_eval_gradient(theta,d,m)
-    f0 = TestConditionalFunctions.ll_test_function(theta,d,m)
+    f0, x1, x2, x3, x4, x5, x6 = EstimationFunctions.consumer_likelihood_eval_gradient(theta,d,m)
+    # f0 = TestConditionalFunctions.ll_test_function(theta,d,m)
     for i in range(len(vec)):
         vec_new = np.copy(vec)
         vec_new[i] = vec[i] + eps
         theta.set_demand(vec_new)
-        # f1, x0, x2, x3, x4, x5, x6 = EstimationFunctions.consumer_likelihood_eval_gradient(theta,d,m)
-        f1 = TestConditionalFunctions.ll_test_function(theta,d,m)
+        f1, x0, x2, x3, x4, x5, x6 = EstimationFunctions.consumer_likelihood_eval_gradient(theta,d,m)
+        # f1 = TestConditionalFunctions.ll_test_function(theta,d,m)
         der = (f1-f0)/(eps)
         grad[i] = der        
         theta.set_demand(vec)

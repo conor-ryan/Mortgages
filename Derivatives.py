@@ -316,9 +316,9 @@ def share_parameter_second_derivatives(r,alpha,d,theta,m,model="base"):
         d2endo_dtheta2[:,:,k] = -np.dot(np.linalg.inv(df_dendo),(d2f_dtheta2[:,:,k] + A + A_t + B))
 
 
-    if alpha<=theta.alpha_min:
-        dendo_dtheta = np.zeros(dendo_dtheta.shape)
-        d2endo_dtheta2 = np.zeros(d2endo_dtheta2.shape)
+    # if alpha<=theta.alpha_min:
+    #     dendo_dtheta = np.zeros(dendo_dtheta.shape)
+    #     d2endo_dtheta2 = np.zeros(d2endo_dtheta2.shape)
 
     q, dqdr, d2qdr2, dqdalpha,d2qdalpha2,d2qdrdalpha, dqdbeta_x, d2qdbeta_x,d2qdbetadr, d2qdbetadalpha = share_partial_deriv(r,alpha,d,theta,m)
 
@@ -396,8 +396,8 @@ def share_parameter_derivatives(r,alpha,d,theta,m,model="base"):
     df_dtheta = np.transpose(np.concatenate((df_db,df_dg),axis=0))
     dendo_dtheta = -np.transpose(np.dot(np.linalg.inv(df_dendo),df_dtheta))
 
-    if alpha<=theta.alpha_min:
-        dendo_dtheta = np.zeros(dendo_dtheta.shape)
+    # if alpha<=theta.alpha_min:
+    #     dendo_dtheta = np.zeros(dendo_dtheta.shape)
 
     # # Market Shares
     # q =  market_shares(r,alpha,d,theta)
@@ -434,6 +434,7 @@ def share_parameter_derivatives(r,alpha,d,theta,m,model="base"):
     dalpha_dtheta = dendo_dtheta[:,d.lender_obs]
 
     return dlogq_dtheta, dq0_dtheta, dalpha_dtheta
+    # return dendo_dtheta
 
 
 def share_partial_deriv(r,alpha,d,theta,m):

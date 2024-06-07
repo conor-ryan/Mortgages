@@ -141,7 +141,7 @@ true_parameters = np.array([9.3,9.1, 8.9, 8.7,8.5,0])#, # Beta_x
 #     elapsed = end - start
 #     print(f'Elapsed Time: {elapsed:.6f} seconds')
 
-NUM_WORKERS = 16
+NUM_WORKERS = 3
 start_parameters = np.zeros(len(true_parameters))
 
 
@@ -154,7 +154,7 @@ start_parameters = np.zeros(len(true_parameters))
 
 print("Estimate in Parallel with precondition")
 f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_data,parallel=True,num_workers=NUM_WORKERS,
-                         gtol=1e-6,pre_condition=True,pre_cond_itr=30,
+                         gtol=1e-6,pre_condition=True,pre_cond_itr=10,
                          max_step_size = 10)
 
 

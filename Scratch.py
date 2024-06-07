@@ -118,7 +118,7 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5])#, # Beta_x
 # res = np.array([  16.6769731,    16.47231718 ,  15.8495233   , 16.13734006,   15.65849686,
 #  -135.99767026])
 res = np.zeros(len(true_parameters))
-res[0:6] = [ 8.51718423,  6.92391885 , 6.45555841,  5.14300395,  3.91491964 ,15.14973622]
+res[0:6] = [15.86156104 ,15.37681211 ,15.49622096 ,14.96857791 ,14.96499277, -3.15296773]
 
 clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 ll0 = evaluate_likelihood(res,theta,clist)
@@ -142,7 +142,7 @@ print(np.max(np.abs((hess2-t2)/t2)))
 # f_val, res = estimate_NR_parallel(true_parameters,theta,consumer_data,market_data,mbs_data,4,gtol=1e-6,xtol=1e-15)
 
 
-a_vec, e_vec,flag_vec = predicted_elasticity(true_parameters,theta,consumer_data,market_data,mbs_data)
+a_vec, e_vec,flag_vec = predicted_elasticity(res,theta,consumer_data,market_data,mbs_data)
 
 
 # print("Test Numerical Derivative At Optimum")
@@ -398,18 +398,18 @@ test = np.array([31.26264496, 31.04771438, 30.7065461,  30.73619066, 31.11616083
 # np.log(q3[dat.lender_obs])
 # 193, 247, 385, 524, 541
 error = np.zeros((consumer_data.shape[0],2))
-# for i in range(consumer_data.shape[0]):
-i = 0
-# i = 98, 120, 226, 269,181, 123
-# test = np.copy(res)
-# test[0] = test[0] + 1e-6
-theta.set_demand(res)
-dat,mbs = consumer_subset(i,theta,consumer_data,market_data,mbs_data)
-ll_i, dll_i, q0, dq0,alpha, da, sb = consumer_likelihood_eval_gradient(theta,dat,mbs)
-# ll_i, dll_i, d2ll_i, q0, dq0, d2q0, alpha, da,d2a, sb,ab = consumer_likelihood_eval_hessian(theta,dat,mbs)
-g_test = deriv_test_cons_ll(res,theta,dat,mbs)
-# h_test = hess_test_cons_ll(res,theta,dat,mbs)
-# error[i,0] = np.sum(np.abs(g_test- dll_i[0:6]))
+for i in range(consumer_data.shape[0]):
+  # i = 237
+  # i = 4,    5,    6,   30,   31,   35,   43,   50,   58,  104,  120, 137,  163,  183,  204,  227,  247,  252,  264,  269,  275,  306
+  # test = np.copy(res)
+  # test[0] = test[0] + 1e-6
+  theta.set_demand(res)
+  dat,mbs = consumer_subset(i,theta,consumer_data,market_data,mbs_data)
+  ll_i, dll_i, q0, dq0,alpha, da, sb = consumer_likelihood_eval_gradient(theta,dat,mbs)
+  # ll_i, dll_i, d2ll_i, q0, dq0, d2q0, alpha, da,d2a, sb,ab = consumer_likelihood_eval_hessian(theta,dat,mbs)
+  g_test = deriv_test_cons_ll(res,theta,dat,mbs)
+  # h_test = hess_test_cons_ll(res,theta,dat,mbs)
+  error[i,0] = np.sum(np.abs(g_test- dll_i[0:6]))
 # error[i,1] = np.sum(np.abs(h_test- d2ll_i[0:6,0:6]))  
 # np.sum(np.abs(g_test- dll_i[0:6]))
 # np.sum(np.abs(h_test- d2ll_i[0:6,0:6]))
@@ -490,8 +490,8 @@ dalpha, dr, dbeta, dgamma = d_foc_all_parameters(r,alpha,dat,theta,mbs)
 dalpha1, dr1,foc = d_foc(r,alpha,dat,theta,mbs)
 
 #### Test First Derivatives ####
-print(np.sum(np.abs(t1-dalpha1)))
-print(np.sum(np.abs((t2-dr1))))
+print(np.sum(np.abs(t1-dalpha)))
+print(np.sum(np.abs((t2-dr))))
 print(np.sum(np.abs(t3-dbeta)))
 print(np.sum(np.abs(t4-dgamma)))
 
@@ -526,10 +526,10 @@ print(np.sum(np.abs((t6-drdbeta))))
 
 ## Implicit/Total Derivatives
 
-endo_grad, grad0, outside_grad = share_parameter_derivatives(r,alpha,dat,theta,mbs)
+endo_grad = share_parameter_derivatives(r,alpha,dat,theta,mbs)
 
 grad1, hess1, d1, d2 = share_parameter_second_derivatives(r,alpha,dat,theta,mbs)
-# t1 = deriv_test_endo(dat,theta,mbs)
+t1 = deriv_test_endo(dat,theta,mbs)
 # t2 = deriv2_test_endo(dat,theta,mbs)
 t3 = deriv_test_total_shares(dat,theta,mbs)
 t4 = deriv2_test_total_shares(dat,theta,mbs)

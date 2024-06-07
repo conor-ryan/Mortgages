@@ -398,20 +398,21 @@ test = np.array([31.26264496, 31.04771438, 30.7065461,  30.73619066, 31.11616083
 # np.log(q3[dat.lender_obs])
 # 193, 247, 385, 524, 541
 error = np.zeros((consumer_data.shape[0],2))
-for i in range(consumer_data.shape[0]):
-  # i = 237
-  # i = 4,    5,    6,   30,   31,   35,   43,   50,   58,  104,  120, 137,  163,  183,  204,  227,  247,  252,  264,  269,  275,  306
-  # test = np.copy(res)
-  # test[0] = test[0] + 1e-6
-  theta.set_demand(res)
-  dat,mbs = consumer_subset(i,theta,consumer_data,market_data,mbs_data)
-  ll_i, dll_i, q0, dq0,alpha, da, sb = consumer_likelihood_eval_gradient(theta,dat,mbs)
-  # ll_i, dll_i, d2ll_i, q0, dq0, d2q0, alpha, da,d2a, sb,ab = consumer_likelihood_eval_hessian(theta,dat,mbs)
-  g_test = deriv_test_cons_ll(res,theta,dat,mbs)
-  # h_test = hess_test_cons_ll(res,theta,dat,mbs)
-  error[i,0] = np.sum(np.abs(g_test- dll_i[0:6]))
+# for i in range(consumer_data.shape[0]):
+i = 799
+# i = 204,  219,  310,  373,  468,  743,  773,  799, 1080, 1700, 1760,
+# test = np.copy(res)
+# test[0] = test[0] + 1e-6
+theta.set_demand(res)
+dat,mbs = consumer_subset(i,theta,consumer_data,market_data,mbs_data)
+ll_i, dll_i, q0, dq0,alpha, da, sb = consumer_likelihood_eval_gradient(theta,dat,mbs)
+# ll_i, dll_i, d2ll_i, q0, dq0, d2q0, alpha, da,d2a, sb,ab = consumer_likelihood_eval_hessian(theta,dat,mbs)
+g_test = deriv_test_cons_ll(res,theta,dat,mbs)
+# h_test = hess_test_cons_ll(res,theta,dat,mbs)
+  # error[i,0] = np.sum(np.abs(g_test- dll_i[0:6]))
 # error[i,1] = np.sum(np.abs(h_test- d2ll_i[0:6,0:6]))  
-# np.sum(np.abs(g_test- dll_i[0:6]))
+np.sum(np.abs(g_test- dll_i[0:6]))
+print(g_test - dll_i[0:6])
 # np.sum(np.abs(h_test- d2ll_i[0:6,0:6]))
 
 # test = np.copy(res)

@@ -141,7 +141,7 @@ true_parameters = np.array([9.3,9.1, 8.9, 8.7,8.5,0])#, # Beta_x.
 #     elapsed = end - start
 #     print(f'Elapsed Time: {elapsed:.6f} seconds')
 
-NUM_WORKERS = 16
+NUM_WORKERS = 31
 start_parameters = np.zeros(len(true_parameters))
 
 

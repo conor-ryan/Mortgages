@@ -501,7 +501,7 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
 
     # Print and output likelihood value
     min_q0 = np.min(q0_list[skipped_list==False])
-    max_q0 = np.max(q0_list[skipped_list==False])
+    max_q0 = 1-np.max(q0_list[skipped_list==False])
     print("Estimated purchase probability Bounds: ",min_q0,max_q0)
     # print("Likelihood:",ll, "Macro ll component:", ll_macro)
     if np.sum(sbound_mean)>0:

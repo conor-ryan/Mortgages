@@ -85,10 +85,10 @@ theta = Parameters(bank_dem_spec,bank_cost_spec,consumer_cost_spec,discount_spec
 # cost_true = np.array([-0.01,-0.005,0.002,#Gamma_WH
 #                       0.4,-1.4e-4,-3.5e-5,0,0,0.00,0,0.3])
 theta.set_cost(cost_res.x)
+print("Cost Estimates:",cost_res.x)
 
 
-
-true_parameters = np.array([9.3,9.1, 8.9, 8.7,8.5,0])#, # Beta_x
+true_parameters = np.array([9.3,9.1, 8.9, 8.7,8.5,0])#, # Beta_x.
                 #    0,0,0, #Gamma_WH
                 #    0.32,0]) # Gamma_ZH
 

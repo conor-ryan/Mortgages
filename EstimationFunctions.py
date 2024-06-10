@@ -435,6 +435,7 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
 
     sbound_mean = np.zeros(N)
     abound_mean = np.zeros(N)
+    skipped_list = np.zeros(N)
 
     # Initialize log likelihood tracking variables
     ll_micro = 0.0
@@ -490,6 +491,7 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
 
         sbound_mean[i] = sb_i
         abound_mean[i] = ab_i
+        skipped_list[i] = dat.skip
 
     ll_macro, dll_macro, d2ll_macro,BFGS_next = KernelFunctions.macro_likelihood_hess(alpha_list,c_list_H,c_list_S,q0_list,
                                                                                       dalpha_list,dq0_list,d2q0_list,theta,BFGS_prior=kwargs.get("BFGS_prior"))
@@ -498,8 +500,9 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
     d2ll = d2ll_micro + d2ll_macro
 
     # Print and output likelihood value
-    min_q0 = np.min(q0_list[q0_list>2e-10])
-    print("Minimum estimated purchase probability: ",min_q0)
+    min_q0 = np.min(q0_list[skipped_list==False])
+    max_q0 = np.max(q0_list[skipped_list==False])
+    print("Estimated purchase probability Bounds: ",min_q0,max_q0)
     # print("Likelihood:",ll, "Macro ll component:", ll_macro)
     if np.sum(sbound_mean)>0:
         print("Fraction on Share Bound",np.mean(sbound_mean))

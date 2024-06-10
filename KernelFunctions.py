@@ -125,6 +125,7 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0
     
     if (any(pred_out>(1-1e-3))) or (any(pred_out<1e-3)):
         print("Outside Share Close to Corner Solution:",pred_out)
+    print("Outside Share",pred_out)
     #Approximate Hessian (BFGS)
     BFGS_mem = kwargs.get("r_start")
     x_curr = theta.all()[theta.beta_x_ind]

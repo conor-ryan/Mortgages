@@ -425,7 +425,7 @@ def solve_eq_r_optim(r0,j,d,theta,m,model="base",return_bound=False):
         else:    
             return alpha, r, itr, True
     
-    print("Using Optim",d.i)
+    # print("Using Optim",d.i)
     # Define zero profit interest rate which will help bound feasible equi. interest rates
     r_min = ModelFunctions.min_rate(d,theta,m,model=model)
     if model=="base": 

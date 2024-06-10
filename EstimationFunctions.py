@@ -293,6 +293,7 @@ def evaluate_likelihood(x,theta,clist,parallel=False,num_workers=0,model="base")
     c_list_H = np.zeros(N)
     c_list_S = np.zeros(N)
     q0_list = np.zeros(N)
+    skipped_list = np.zeros(N)
 
 
     ## Evaluate each consumer in parallel
@@ -321,9 +322,10 @@ def evaluate_likelihood(x,theta,clist,parallel=False,num_workers=0,model="base")
         q0_list[i] = q0_i
         c_list_H[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZH)
         c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZS)
+        skipped_list[i] = dat.skip
 
     # Combine Micro and Macro Likelihood Moments
-    ll_macro = KernelFunctions.macro_likelihood(alpha_list,c_list_H,c_list_S,q0_list,theta)
+    ll_macro = KernelFunctions.macro_likelihood(alpha_list,c_list_H,c_list_S,q0_list,theta,skipped_list)
     ll = ll_micro + ll_macro
     # Print and output likelihood value
     # print("Likelihood:",ll, "Macro Component:", ll_macro)
@@ -364,6 +366,7 @@ def evaluate_likelihood_gradient(x,theta,clist,parallel=False,num_workers=0,mode
 
     dalpha_list = np.zeros((N,K))
     dq0_list = np.zeros((N,K))
+    skipped_list = np.zeros(N)
 
 
     ## Evaluate each consumer in parallel
@@ -397,10 +400,11 @@ def evaluate_likelihood_gradient(x,theta,clist,parallel=False,num_workers=0,mode
 
         dalpha_list[i,:] = da_i
         dq0_list[i,:] = dq0_i
+        skipped_list[i] = dat.skip
     
     # Compute Macro Likelihood Component and Gradient
     ll_macro, dll_macro = KernelFunctions.macro_likelihood_grad(alpha_list,c_list_H,c_list_S,q0_list,
-                                                                dalpha_list,dq0_list,theta)
+                                                                dalpha_list,dq0_list,theta,skipped_list)
 
     ll = ll_micro + ll_macro
     dll = dll_micro + dll_macro
@@ -494,7 +498,8 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
         skipped_list[i] = dat.skip
 
     ll_macro, dll_macro, d2ll_macro,BFGS_next = KernelFunctions.macro_likelihood_hess(alpha_list,c_list_H,c_list_S,q0_list,
-                                                                                      dalpha_list,dq0_list,d2q0_list,theta,BFGS_prior=kwargs.get("BFGS_prior"))
+                                                                                      dalpha_list,dq0_list,d2q0_list,theta,skipped_list
+                                                                                      BFGS_prior=kwargs.get("BFGS_prior"))
     ll = ll_micro + ll_macro
     dll = dll_micro + dll_macro
     d2ll = d2ll_micro + d2ll_macro

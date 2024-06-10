@@ -81,7 +81,7 @@ def skipped_consumer_likelihood(theta,d,m):
         dll_i = np.zeros(len(theta.all()))
         d2ll_i = 0.0
         # q0 = 1-1e-10
-        q0 = 1e-10
+        q0 = 0.5
         dq0 = np.zeros(len(theta.all()))
         da = np.zeros(len(theta.all()))
         d2q0 = np.zeros((len(theta.all()),len(theta.all())))

@@ -116,7 +116,7 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0
         #                            da_mkt,dq0_mkt,theta.out_share[o],theta)
     
         out = np.mean(q0_mkt[skip_mkt==False])
-        g = np.mean(dq0_mkt[skip_mkt==False],:,0)
+        g = np.mean(dq0_mkt[skip_mkt==False,:],0)
 
         pred_out[o] = out
         x = theta.N[o]*(theta.out_share[o]*(g)/out - (1-theta.out_share[o])*(g)/(1-out) )

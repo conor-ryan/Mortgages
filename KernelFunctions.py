@@ -37,7 +37,7 @@ def outside_share(a_vec,c_h_vec,c_s_vec,q0_vec,out_share):
 
 
 
-def macro_likelihood(a_list,c_list_H,c_list_S,q0_list,theta):
+def macro_likelihood(a_list,c_list_H,c_list_S,q0_list,theta,skip_vec):
     out_indices = [int(x) for x in np.unique(theta.out_vec)]
     pred_out = np.zeros(len(out_indices))
     for o in out_indices:
@@ -47,14 +47,16 @@ def macro_likelihood(a_list,c_list_H,c_list_S,q0_list,theta):
         c_mkt_H = c_list_H[ind]
         c_mkt_S = c_list_S[ind]
 
+        skip_mkt = skip_vec[ind]
+
         # pred_out[o] = outside_share(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,theta.out_share[o])
-        pred_out[o] = np.mean(q0_mkt)
+        pred_out[o] = np.mean(q0_mkt[skip_mkt==False])
     ll_macro = np.sum(theta.N*theta.out_share*np.log(pred_out)) + \
                     np.sum(theta.N*(1-theta.out_share)*np.log(1-pred_out))
     return ll_macro
 
 def macro_likelihood_grad(a_list,c_list_H,c_list_S,q0_list,
-                          da_list,dq0_list,theta):
+                          da_list,dq0_list,theta,skip_vec):
     out_indices = [int(x) for x in np.unique(theta.out_vec)]
     pred_out = np.zeros(len(out_indices))
     grad = np.zeros(len(theta.all()))
@@ -68,10 +70,12 @@ def macro_likelihood_grad(a_list,c_list_H,c_list_S,q0_list,
         da_mkt = da_list[ind]#[theta.out_sample[o]]
         dq0_mkt = dq0_list[ind]#[theta.out_sample[o]]
 
+        skip_mkt = skip_vec[ind]
+
         # out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
         #                            da_mkt,dq0_mkt,theta.out_share[o],theta)
-        out = np.mean(q0_mkt)
-        g = np.mean(dq0_mkt,0)
+        out = np.mean(q0_mkt[skip_mkt==False])
+        g = np.mean(dq0_mkt[skip_mkt==False,:],0)
         pred_out[o] = out
         x = theta.N[o]*(theta.out_share[o]*(g)/out - (1-theta.out_share[o])*(g)/(1-out) )
         grad += x
@@ -83,7 +87,7 @@ def macro_likelihood_grad(a_list,c_list_H,c_list_S,q0_list,
     return ll_macro, grad
 
 
-def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0_list,theta,**kwargs):
+def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0_list,theta,skip_vec,**kwargs):
     
     out_indices = [int(x) for x in np.unique(theta.out_vec)]
     pred_out = np.zeros(len(out_indices))
@@ -99,6 +103,8 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0
         da_mkt = da_list[ind]#[theta.out_sample[o]]
         dq0_mkt = dq0_list[ind]#[theta.out_sample[o]]
 
+        skip_mkt = skip_vec[ind]
+
         d2q0_mkt = d2q0_list[ind]
         # x = theta.N[o]*theta.out_share[o]*(np.dot(grad_alpha,da_mkt) + np.dot(grad_q0,dq0_mkt))
         
@@ -109,15 +115,15 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0
         # out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
         #                            da_mkt,dq0_mkt,theta.out_share[o],theta)
     
-        out = np.mean(q0_mkt)
-        g = np.mean(dq0_mkt,0)
+        out = np.mean(q0_mkt[skip_mkt==False])
+        g = np.mean(dq0_mkt[skip_mkt==False],:,0)
 
         pred_out[o] = out
         x = theta.N[o]*(theta.out_share[o]*(g)/out - (1-theta.out_share[o])*(g)/(1-out) )
         grad += x
 
-        y = theta.N[o]*theta.out_share[o]*(np.mean(d2q0_mkt,0)/out - np.outer(g,g)/out**2) - \
-         theta.N[o]*(1-theta.out_share[o])*(np.mean(d2q0_mkt,0)/(1-out) + np.outer(g,g)/(1-out)**2)
+        y = theta.N[o]*theta.out_share[o]*(np.mean(d2q0_mkt[skip_mkt==False,:,:],0)/out - np.outer(g,g)/out**2) - \
+         theta.N[o]*(1-theta.out_share[o])*(np.mean(d2q0_mkt[skip_mkt==False,:,:],0)/(1-out) + np.outer(g,g)/(1-out)**2)
         hess += y
 
     ll_macro = np.sum(theta.N*theta.out_share*np.log(pred_out)) + \

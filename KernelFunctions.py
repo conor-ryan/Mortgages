@@ -48,9 +48,10 @@ def macro_likelihood(a_list,c_list_H,c_list_S,q0_list,theta,skip_vec):
         c_mkt_S = c_list_S[ind]
 
         skip_mkt = skip_vec[ind]
+        skip_share = sum(skip_mkt)/len(skip_mkt)
 
         # pred_out[o] = outside_share(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,theta.out_share[o])
-        pred_out[o] = np.mean(q0_mkt)
+        pred_out[o] = np.mean(q0_mkt[skip_mkt==False])
     ll_macro = np.sum(theta.N*theta.out_share*np.log(pred_out)) + \
                     np.sum(theta.N*(1-theta.out_share)*np.log(1-pred_out))
     return ll_macro
@@ -74,8 +75,8 @@ def macro_likelihood_grad(a_list,c_list_H,c_list_S,q0_list,
 
         # out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
         #                            da_mkt,dq0_mkt,theta.out_share[o],theta)
-        out = np.mean(q0_mkt)
-        g = np.mean(dq0_mkt,0)
+        out = np.mean(q0_mkt[skip_mkt==False])
+        g = np.mean(dq0_mkt[skip_mkt==False,:],0)
         pred_out[o] = out
         x = theta.N[o]*(theta.out_share[o]*(g)/out - (1-theta.out_share[o])*(g)/(1-out) )
         grad += x
@@ -115,15 +116,15 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0
         # out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
         #                            da_mkt,dq0_mkt,theta.out_share[o],theta)
     
-        out = np.mean(q0_mkt)
-        g = np.mean(dq0_mkt,0)
+        out = np.mean(q0_mkt[skip_mkt==False])
+        g = np.mean(dq0_mkt[skip_mkt==False,:],0)
 
         pred_out[o] = out
         x = theta.N[o]*(theta.out_share[o]*(g)/out - (1-theta.out_share[o])*(g)/(1-out) )
         grad += x
 
-        y = theta.N[o]*theta.out_share[o]*(np.mean(d2q0_mkt,0)/out - np.outer(g,g)/out**2) - \
-         theta.N[o]*(1-theta.out_share[o])*(np.mean(d2q0_mkt,0)/(1-out) + np.outer(g,g)/(1-out)**2)
+        y = theta.N[o]*theta.out_share[o]*(np.mean(d2q0_mkt[skip_mkt==False,:,:],0)/out - np.outer(g,g)/out**2) - \
+         theta.N[o]*(1-theta.out_share[o])*(np.mean(d2q0_mkt[skip_mkt==False,:,:],0)/(1-out) + np.outer(g,g)/(1-out)**2)
         hess += y
 
     ll_macro = np.sum(theta.N*theta.out_share*np.log(pred_out)) + \

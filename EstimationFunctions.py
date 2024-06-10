@@ -498,7 +498,7 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
         skipped_list[i] = dat.skip
 
     ll_macro, dll_macro, d2ll_macro,BFGS_next = KernelFunctions.macro_likelihood_hess(alpha_list,c_list_H,c_list_S,q0_list,
-                                                                                      dalpha_list,dq0_list,d2q0_list,theta,skipped_list
+                                                                                      dalpha_list,dq0_list,d2q0_list,theta,skipped_list,
                                                                                       BFGS_prior=kwargs.get("BFGS_prior"))
     ll = ll_micro + ll_macro
     dll = dll_micro + dll_macro

@@ -162,7 +162,7 @@ def out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
 
     grad_func = nd.Gradient(f_obj,step=epsilon,method="central")
     g = grad_func(x)
-    grad[0:len(x)]
+    grad[0:len(x)] = g
     f = f_obj(x)
     return f,grad
     

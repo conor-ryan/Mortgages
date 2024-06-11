@@ -335,7 +335,7 @@ def evaluate_likelihood(x,theta,clist,parallel=False,num_workers=0,model="base")
         skipped_list[i] = dat.skip
 
     # Combine Micro and Macro Likelihood Moments
-    ll_macro = KernelFunctions.macro_likelihood(alpha_list,c_list_H,c_list_S,q0_list,theta,skipped_list)
+    ll_macro = KernelFunctions.macro_likelihood(alpha_list,c_list_H,c_list_S,q0_list,theta)
     ll = ll_micro + ll_macro
     # Print and output likelihood value
     # print("Likelihood:",ll, "Macro Component:", ll_macro)
@@ -414,7 +414,7 @@ def evaluate_likelihood_gradient(x,theta,clist,parallel=False,num_workers=0,mode
     
     # Compute Macro Likelihood Component and Gradient
     ll_macro, dll_macro = KernelFunctions.macro_likelihood_grad(alpha_list,c_list_H,c_list_S,q0_list,
-                                                                dalpha_list,dq0_list,theta,skipped_list)
+                                                                dalpha_list,dq0_list,theta)
 
     ll = ll_micro + ll_macro
     dll = dll_micro + dll_macro
@@ -508,7 +508,7 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
         skipped_list[i] = dat.skip
 
     ll_macro, dll_macro, d2ll_macro,BFGS_next = KernelFunctions.macro_likelihood_hess(alpha_list,c_list_H,c_list_S,q0_list,
-                                                                                      dalpha_list,dq0_list,d2q0_list,theta,skipped_list,
+                                                                                      dalpha_list,dq0_list,d2q0_list,theta,
                                                                                       BFGS_prior=kwargs.get("BFGS_prior"))
     ll = ll_micro + ll_macro
     dll = dll_micro + dll_macro

@@ -66,7 +66,7 @@ def macro_likelihood(a_list,c_list_H,c_list_S,q0_list,theta):
     return ll_macro
 
 def macro_likelihood_grad(a_list,c_list_H,c_list_S,q0_list,
-                          da_list,dq0_list,theta,skip_vec):
+                          da_list,dq0_list,theta):
     out_indices = [int(x) for x in np.unique(theta.out_vec)]
     pred_out = np.zeros(len(out_indices))
     grad = np.zeros(len(theta.all()))
@@ -96,7 +96,7 @@ def macro_likelihood_grad(a_list,c_list_H,c_list_S,q0_list,
     return ll_macro, grad
 
 
-def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0_list,theta,skip_vec,**kwargs):
+def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0_list,theta,**kwargs):
     
     out_indices = [int(x) for x in np.unique(theta.out_vec)]
     pred_out = np.zeros(len(out_indices))

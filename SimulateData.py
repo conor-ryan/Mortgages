@@ -262,8 +262,8 @@ share_data[:,4] = (share_data[:,1] + share_data[:,2])
 share_data[:,3] = share_data[:,2]/share_data[:,4]
 print(share_data[:,3])
 
-share_data[0,3] = np.mean(consumer_data[consumer_data[:,1]==0,22])
-share_data[1,3] = np.mean(consumer_data[consumer_data[:,1]==1,22])
+# share_data[0,3] = np.mean(consumer_data[consumer_data[:,1]==0,22])
+# share_data[1,3] = np.mean(consumer_data[consumer_data[:,1]==1,22])
 
 file = "consumer_data_sim.csv"
 pd.DataFrame(consumer_data).to_csv(file,index=False)

@@ -122,7 +122,8 @@ def consumer_likelihood_eval(theta,d,m,model="base"):
     if sb==0:
         ll_i = ll_cond[d.lender_obs]
     else:
-        ll_i = np.log(1/len(q))
+        # ll_i = np.log(1/len(q))
+        ll_i = ll_cond[d.lender_obs]
     # ll_i = np.log(q[d.lender_obs]) - np.log(np.sum(q))
     # Compute macro likelihood contribution
     q0 = 1- np.sum(q) # Probability of selecting outside option
@@ -164,7 +165,8 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
     if sb==0:
         ll_i = ll_cond[d.lender_obs]
     else:
-        ll_i = np.log(1/len(q))
+        # ll_i = np.log(1/len(q))
+        ll_i = ll_cond[d.lender_obs]
     # ll_i = np.log(q[d.lender_obs]) - np.log(np.sum(q))
     # Compute macro likelihood contribution
     q0 = 1- np.sum(q) # Probability of selecting outside option
@@ -191,7 +193,7 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
         dlogq = TestConditionalFunctions.conditional_parameter_derivatives(r_eq,alpha,d,theta,m,model=model)
         # Compute likelihood and probability weight gradients
         dll_i = dlogq[:,d.lender_obs] #+ dq0/(1-q0)
-        dll_i = dll_i*(1-sb)
+        dll_i = dll_i#*(1-sb)
         dq0 = dq0*(1-sb)
 
     return ll_i, dll_i, q0, dq0, alpha, da, sb
@@ -226,7 +228,8 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
     if sb==0:
         ll_i = ll_cond[d.lender_obs]
     else:
-        ll_i = np.log(1/len(q))
+        # ll_i = np.log(1/len(q))
+        ll_i = ll_cond[d.lender_obs]
     # ll_i = np.log(q[d.lender_obs]) - np.log(np.sum(q))
     # Compute macro likelihood contribution
     q0 = 1- np.sum(q) # Probability of selecting outside option
@@ -259,8 +262,8 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
         dll_i = dlogq[:,d.lender_obs] #+ dq0/(1-q0)
         # Compute likelihood and probability weight hessians
         d2ll_i = d2logq[:,:,d.lender_obs] #+ d2q0/(1-q0) + np.outer(dq0,dq0)/(1-q0)**2
-        dll_i = dll_i*(1-sb)
-        d2ll_i = d2ll_i*(1-sb)
+        dll_i = dll_i#*(1-sb)
+        d2ll_i = d2ll_i#*(1-sb)
         dq0 = dq0*(1-sb)
         d2q0 = d2q0*(1-sb)
         

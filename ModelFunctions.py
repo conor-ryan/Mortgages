@@ -93,9 +93,9 @@ def market_shares(r,alpha,d,theta,return_bound=False):
         if any(s<tol):
             s = s*(1-tol) + tol*(sum(s)/len(s))
             bound_flag  = 1
-        # if ((1-sum(s))<tol):
-        #     s = (s/sum(s))*(1-tol) 
-        #     bound_flag  = 1
+        if ((1-sum(s))<tol):
+            s = (s/sum(s))*(1-tol) 
+            bound_flag  = 1
         if sum(s)<tol:
             s = np.repeat(tol/len(s),len(s))
             bound_flag  = 1

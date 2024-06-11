@@ -13,7 +13,7 @@ from ParallelFunctions import *
 from Derivatives import * 
 from CostEstFunctions import *
 from KernelFunctions import *
-# from NumericalDerivatives import *
+from NumericalDerivatives import *
 
 
 # File with Loan-Level Data
@@ -163,3 +163,20 @@ f_val, res = estimate_NR(start_parameters,theta,consumer_data,market_data,mbs_da
 
 
 
+print("Test Numerical Derivative")
+clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
+
+# ll0 = evaluate_likelihood(res,theta,clist)
+ll1, grad1 = evaluate_likelihood_gradient(res,theta,clist,parallel=True,num_workers=NUM_WORKERS)
+print(grad1)
+
+
+# ll2, grad2,hess2,bfgs = evaluate_likelihood_hessian(res,theta,consumer_data,market_data,mbs_data)
+# print(grad2)
+t1 = deriv_test_likelihood(res,theta,clist)
+# t2 = num_hessian_likelihood(res,theta,consumer_data,market_data,mbs_data)
+
+print(grad1)
+print(t1)
+print(np.max(np.abs((grad1-t1)/t1)))
+# print(np.max(np.abs((hess2-t2)/t2)))

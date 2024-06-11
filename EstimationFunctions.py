@@ -564,7 +564,9 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,
         ll_pre,x = estimate_GA(x,theta,clist,
                                parallel=parallel,
                                num_workers=num_workers,
-                               itr_max=pre_cond_itr)
+                               itr_max=pre_cond_itr,
+                               gtol=gtol,
+                               xtol=xtol)
 
     # Set candidate vector in parameter object
     theta.set_demand(x)  

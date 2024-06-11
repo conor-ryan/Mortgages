@@ -1,7 +1,7 @@
 import scipy as sp
 import numpy as np
 import numdifftools as nd
-
+import ParallelFunctions
 import EstimationFunctions
 
 ## Use Kernel Density to estimate total purcahse share
@@ -12,6 +12,9 @@ def outside_share(a_vec,c_h_vec,c_s_vec,q0_vec,out_share):
     X[0,:] = a_vec
     X[1,:] = c_s_vec
     X[2,:] = c_h_vec
+    
+    # X = np.zeros((1,len(a_vec)))
+    # X[0,:] = a_vec
 
     # Potentially use for dropping observations from the kernel 
     ind = range(len(a_vec))
@@ -27,8 +30,17 @@ def outside_share(a_vec,c_h_vec,c_s_vec,q0_vec,out_share):
     dist_out = sp.stats.gaussian_kde(X[:,ind],weights=wgts[ind])
     dist_outside_obs = dist_out(X)
 
+    # dist_outside_obs2 = dist_cond_obs*wgts
+
     # Implied total density 
     dist_uncond = dist_cond_obs*(1-out_share) + dist_outside_obs*out_share
+
+    # sum(dist_uncond*q0_vec)/sum(dist_uncond)
+
+    # sum(dist_cond_obs*q0_vec)/sum(dist_cond_obs)*(1-out_share) + sum(dist_outside_obs*q0_vec)/sum(dist_outside_obs)*(out_share)
+    
+    # sum(dist_cond_obs*q0_vec)/sum(dist_cond_obs)*(1-out_share) + sum(dist_outside_obs2*q0_vec)/sum(dist_outside_obs2)*(out_share)
+
 
     # Predicted outside option share
     pred_out=sum(dist_uncond*q0_vec)/sum(dist_uncond)
@@ -37,7 +49,7 @@ def outside_share(a_vec,c_h_vec,c_s_vec,q0_vec,out_share):
 
 
 
-def macro_likelihood(a_list,c_list_H,c_list_S,q0_list,theta,skip_vec):
+def macro_likelihood(a_list,c_list_H,c_list_S,q0_list,theta):
     out_indices = [int(x) for x in np.unique(theta.out_vec)]
     pred_out = np.zeros(len(out_indices))
     for o in out_indices:
@@ -47,13 +59,8 @@ def macro_likelihood(a_list,c_list_H,c_list_S,q0_list,theta,skip_vec):
         c_mkt_H = c_list_H[ind]
         c_mkt_S = c_list_S[ind]
 
-        skip_mkt = skip_vec[ind]
-        skip_share = sum(skip_mkt)/len(skip_mkt)
-        # skip_share = 0.0
-
-        # pred_out[o] = outside_share(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,theta.out_share[o])
-        pred_out[o] = np.mean(q0_mkt)#[skip_mkt==False])*(1-skip_share) +  \
-        # np.mean(q0_mkt[skip_mkt==True])*(skip_share)
+        pred_out[o] = outside_share(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,theta.out_share[o])
+        # pred_out[o] = np.mean(q0_mkt)
     ll_macro = np.sum(theta.N*theta.out_share*np.log(pred_out)) + \
                     np.sum(theta.N*(1-theta.out_share)*np.log(1-pred_out))
     return ll_macro
@@ -73,15 +80,10 @@ def macro_likelihood_grad(a_list,c_list_H,c_list_S,q0_list,
         da_mkt = da_list[ind]#[theta.out_sample[o]]
         dq0_mkt = dq0_list[ind]#[theta.out_sample[o]]
 
-        skip_mkt = skip_vec[ind]
-        skip_share = sum(skip_mkt)/len(skip_mkt)
-        # skip_share = 0.0
-
-        # out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
-        #                            da_mkt,dq0_mkt,theta.out_share[o],theta)
-        out = np.mean(q0_mkt)#[skip_mkt==False])*(1-skip_share) +  \
-        #np.mean(q0_mkt[skip_mkt==True])*(skip_share)
-        g = np.mean(dq0_mkt,0)#[skip_mkt==False,:],0)*(1-skip_share)
+        out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
+                                   da_mkt,dq0_mkt,theta.out_share[o],theta)
+        # out = np.mean(q0_mkt)
+        # g = np.mean(dq0_mkt,0)
 
         pred_out[o] = out
         x = theta.N[o]*(theta.out_share[o]*(g)/out - (1-theta.out_share[o])*(g)/(1-out) )
@@ -110,32 +112,22 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0
         da_mkt = da_list[ind]#[theta.out_sample[o]]
         dq0_mkt = dq0_list[ind]#[theta.out_sample[o]]
 
-        skip_mkt = skip_vec[ind]
-        skip_share = sum(skip_mkt)/len(skip_mkt)
-        # skip_share = 0.0
-
         d2q0_mkt = d2q0_list[ind]
-        # x = theta.N[o]*theta.out_share[o]*(np.dot(grad_alpha,da_mkt) + np.dot(grad_q0,dq0_mkt))
-        
-        # out, grad= out_share_gradient(a_mkt,q0_mkt,da_mkt,dq0_mkt,theta.out_share[o])
-        # log_pred_out[o] = log_out
-        # x = theta.N[o]*theta.out_share[o]*(grad)
 
-        # out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
-        #                            da_mkt,dq0_mkt,theta.out_share[o],theta)
+        out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
+                                   da_mkt,dq0_mkt,theta.out_share[o],theta)
     
-        out = np.mean(q0_mkt)#[skip_mkt==False])*(1-skip_share) +  \
-        # np.mean(q0_mkt[skip_mkt==True])*(skip_share)
-        g = np.mean(dq0_mkt,0)#[skip_mkt==False,:],0)*(1-skip_share)
+        # out = np.mean(q0_mkt)
+        # g = np.mean(dq0_mkt,0)
 
         pred_out[o] = out
         x = theta.N[o]*(theta.out_share[o]*(g)/out - (1-theta.out_share[o])*(g)/(1-out) )
         grad += x
 
-        h = np.mean(d2q0_mkt,0)#[skip_mkt==False,:,:],0)*(1-skip_share)
-        y = theta.N[o]*theta.out_share[o]*(h/out - np.outer(g,g)/out**2) - \
-         theta.N[o]*(1-theta.out_share[o])*(h/(1-out) + np.outer(g,g)/(1-out)**2)
-        hess += y
+        # h = np.mean(d2q0_mkt,0)
+        # y = theta.N[o]*theta.out_share[o]*(h/out - np.outer(g,g)/out**2) - \
+        #  theta.N[o]*(1-theta.out_share[o])*(h/(1-out) + np.outer(g,g)/(1-out)**2)
+        # hess += y
 
     ll_macro = np.sum(theta.N*theta.out_share*np.log(pred_out)) + \
                     np.sum(theta.N*(1-theta.out_share)*np.log(1-pred_out))
@@ -156,8 +148,8 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0
         H_new = H0 + (np.outer(dg,dg))/(np.dot(dg,dx)) - np.dot(np.dot(H0,np.outer(dx,dx)),np.transpose(H0))/np.dot(np.dot(np.transpose(dx),H0),dx)
     
     BFGS_next = (x_curr,grad,H_new)
-    return ll_macro, grad, hess, BFGS_next
-    # return ll_macro, grad, H_new, BFGS_next
+    # return ll_macro, grad, hess, BFGS_next
+    return ll_macro, grad, H_new, BFGS_next
 
 
 def out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
@@ -185,62 +177,86 @@ def out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
     return f,grad
     
 
-# def macro_ll_test(x,theta,cdf,mdf,mbsdf):
-#     # Print candidate parameter guess 
-#     print("Parameters:", x)
-#     # Set parameters in the parameter object
-#     theta.set_demand(x)   
+def macro_ll_test(x,theta,clist,parallel=False,num_workers=0,model="base"):
+ # Print candidate parameter guess 
+    # print("Parameters:", x)
+    # Set parameters in the parameter object
+    theta.set_demand(x)
+    K = len(theta.all())
+    N = len(clist)
 
-#     ll_micro = 0.0
+    # Parallel estimation can only estimate the base model at the moment
+    if parallel and model!="base":
+        raise Exception("WARNING: non-base model specified in parallel. Parallel can only estimate base model.")
+    
+
+    # Initialize log likelihood tracking variables
+    ll_micro = 0.0
+    dll_micro = np.zeros(K)
 
     
-#     alpha_list = np.zeros(cdf.shape[0])
-#     q0_list = np.zeros(cdf.shape[0])
-#     # Iterate over all consumers
-#     itr_avg = 0
-#     for i in range(cdf.shape[0]):
-#         # Subset data for consumer i
-#         dat, mbs = EstimationFunctions.consumer_subset(i,theta,cdf,mdf,mbsdf)
-#         # Evaluate likelihood and gradient for consumer i 
-#         ll_i,q0_i,a_i,itr = EstimationFunctions.consumer_likelihood_eval(theta,dat,mbs)
-#         # Add outside option, probability weights, and derivatives
-#         # pred_N[dat.out] += w_i
-#         # pred_N_out[dat.out] += q0_i*w_i
-#         # dpred_N[dat.out,:] += dw_i
-#         # q0_mkt[dat.out] += q0_i
-#         # dq0_mkt[dat.out,:] += dq0_i
-#         # mkt_Obs[dat.out] +=1
-#         # Add contribution to total likelihood, gradient and hessian (by outside option market)
-#         # Derivatives need to account for the fact that the likelihood is weighted
-#         # ll_market[dat.out] +=ll_i*w_i
-#         # dll_market[dat.out,:] += dll_i*w_i + ll_i*dw_i
+    alpha_list = np.zeros(N)
+    q0_list = np.zeros(N)
+    c_list_H = np.zeros(N)
+    c_list_S = np.zeros(N)
 
-#         ll_micro += ll_i
+    dalpha_list = np.zeros((N,K))
+    dq0_list = np.zeros((N,K))
+    skipped_list = np.zeros(N)
 
-#         alpha_list[i] = a_i
-#         q0_list[i] = q0_i
 
-#         # Track iteration counts (for potential diagnostics)
-#         itr_avg += max(itr,0)
+    ## Evaluate each consumer in parallel
+    if parallel: 
+        if num_workers<2:
+            raise Exception("Number of workers not set (or less than one) in parallel estimation")
+        args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
+        res = ParallelFunctions.eval_map_likelihood_gradient(args,num_workers)
+
+    # Iterate over all consumers to compute likelihood
+    for i in range(N):
+        # Get consumer level results
+        if parallel:
+            # Unpack previously estimated results
+            dat= clist[i]['dat']
+            ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i = res[i]
+        else:
+            # Evaluate likelihood for consumer i 
+            dat = clist[i]['dat']
+            mbs = clist[i]['mbs']       
+            ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i = EstimationFunctions.consumer_likelihood_eval_gradient(theta,dat,mbs,model=model)
+
+        ll_micro += ll_i
+        dll_micro += dll_i
+
+        ## Collect consumer level info for implied outside option share
+        alpha_list[i] = a_i
+        q0_list[i] = q0_i
+        c_list_H[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZH)
+        c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZS)
+
+        dalpha_list[i,:] = da_i
+        dq0_list[i,:] = dq0_i
+        skipped_list[i] = dat.skip
     
-#     # Compute total log likelihood
-#     ll_macro =macro_likelihood(alpha_list,q0_list,theta)
+    # Compute Macro Likelihood Component and Gradient
+    ll_macro, dll_macro = macro_likelihood_grad(alpha_list,c_list_H,c_list_S,q0_list,
+                                                                dalpha_list,dq0_list,theta,skipped_list)
 
-#     return ll_macro
+    return ll_macro, dll_macro 
 
 
-# def test_macro_derivative(x,theta,cdf,mdf,mbsdf):
-#     f0 = macro_ll_test(x,theta,cdf,mdf,mbsdf)
-#     N= len(x)
-#     epsilon = 1e-6
-#     grad = np.zeros(N)
-#     for i in range(N):
-#         x_new = np.copy(x)
-#         x_new[i] = x[i] + epsilon 
-#         f1 = macro_ll_test(x_new,theta,cdf,mdf,mbsdf)
-#         g = (f1-f0)/epsilon
-#         print(i,g)
-#         grad[i] = g
-#     return grad
+def test_macro_derivative(x,theta,clist):
+    f0, dump = macro_ll_test(x,theta,clist)
+    N= len(x)
+    epsilon = 1e-6
+    grad = np.zeros(N)
+    for i in range(N):
+        x_new = np.copy(x)
+        x_new[i] = x[i] + epsilon 
+        f1, dump = macro_ll_test(x_new,theta,clist)
+        g = (f1-f0)/epsilon
+        print(i,g)
+        grad[i] = g
+    return grad
     
 

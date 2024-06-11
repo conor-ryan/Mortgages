@@ -89,6 +89,10 @@ def skipped_consumer_likelihood(theta,d,m):
         d2a = np.zeros((len(theta.all()),len(theta.all())))
         prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(d.r_obs,d.X.shape[0]),d,theta,m)
         alpha = -dprof[d.lender_obs]/prof[d.lender_obs]
+
+        if alpha<-5000 or dprof[d.lender_obs]<0:
+            alpha = -5000
+
         return ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,0,0
 
 ###### Consumer Level Likelihood Evaluation Functions #######

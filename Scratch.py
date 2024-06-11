@@ -118,9 +118,15 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5])#, # Beta_x
 # res = np.array([  16.6769731,    16.47231718 ,  15.8495233   , 16.13734006,   15.65849686,
 #  -135.99767026])
 res = np.zeros(len(true_parameters))
-res[0:6] = [15.86156104 ,15.37681211 ,15.49622096 ,14.96857791 ,14.96499277, -3.15296773]
+res[0:6] =np.array([21.78661791, 21.42619928 ,21.37102829, 20.94248566  ,21.00901065, -1.52253807])
 
 clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
+
+f, grad = macro_ll_test(res,theta,clist)
+print(grad)
+t = test_macro_derivative(res,theta,clist)
+
+
 ll0 = evaluate_likelihood(res,theta,clist)
 ll1, grad1 = evaluate_likelihood_gradient(res,theta,clist)
 print(grad1)
@@ -234,8 +240,11 @@ evaluate_likelihood_hessian(pre_start,theta,consumer_data,market_data,mbs_data)
 mbsdf = mbs_data
 cdf = consumer_data
 mdf = market_data   
-x = true_parameters
+x = res
 model = "base"
+parallel = False
+clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
+
 
 o = 1 
 ind = theta.out_vec==o
@@ -249,6 +258,14 @@ out_share = theta.out_share[0]
 
 da_mkt = dalpha_list[ind,:]
 dq0_mkt = dq0_list[ind,:]
+
+a_vec =a_mkt
+c_h_vec =c_mkt_H
+c_s_vec =c_mkt_S
+q0_vec =q0_mkt
+
+
+
 d2a_mkt = d2alpha_list[ind,:,:]
 d2q0_mkt = d2q0_list[ind,:,:]
 vec = x + np.random.rand(len(x))
@@ -280,10 +297,6 @@ t = grad_func(x)
 h = hess_func(x)
 
 
-a_vec =a_mkt
-c_h_vec =c_mkt_H
-c_s_vec =c_mkt_S
-q0_vec =q0_mkt
 
 
 plt.scatter(-np.log(-a_vec),dist_cond_obs)

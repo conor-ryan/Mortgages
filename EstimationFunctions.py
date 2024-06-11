@@ -467,6 +467,7 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
     dq0_list = np.zeros((N,K))
     
     d2q0_list = np.zeros((N,K,K))
+    d2a_list = np.zeros((N,K,K))
     
         ## Evaluate each consumer in parallel
     if parallel: 
@@ -502,13 +503,16 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
         dq0_list[i,:] = dq0_i
 
         d2q0_list[i,:,:] = d2q0_i
+        d2a_list[i,:,:] = d2a_i
 
         sbound_mean[i] = sb_i
         abound_mean[i] = ab_i
         skipped_list[i] = dat.skip
 
     ll_macro, dll_macro, d2ll_macro,BFGS_next = KernelFunctions.macro_likelihood_hess(alpha_list,c_list_H,c_list_S,q0_list,
-                                                                                      dalpha_list,dq0_list,d2q0_list,theta,
+                                                                                      dalpha_list,dq0_list,
+                                                                                      d2q0_list,d2a_list,
+                                                                                      theta,
                                                                                       BFGS_prior=kwargs.get("BFGS_prior"))
     ll = ll_micro + ll_macro
     dll = dll_micro + dll_macro

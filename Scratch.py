@@ -101,10 +101,10 @@ theta = Parameters(bank_dem_spec,bank_cost_spec,consumer_cost_spec,discount_spec
                    true_first_stage,
                    share_data["3"],share_data["4"])
 
-cost_true = np.array([0,0,0.000,#Gamma_WH
-                      0.4,0.0,0,0,0,0.00,0,0.00])
+cost_true = np.array([-0.01,-0.005,0.002,#Gamma_WH
+                      0.4,-1.4e-4,-3.5e-5,0,0,0.00,0,0.3])
 theta.set_cost(cost_res.x)
-true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5])#, # Beta_x
+true_parameters = np.array([9.3,9.1, 8.9, 8.7,8.5,-1])#, # Beta_x
                 #    0,0,0, #Gamma_WH
                 #    0.32,0]) # Gamma_ZH
 
@@ -119,11 +119,16 @@ true_parameters = np.array([12.3,12.1, 11.9, 11.7,11.5,5])#, # Beta_x
 #  -135.99767026])
 res = np.zeros(len(true_parameters))
 res[0:6] =np.array([21.78661791, 21.42619928 ,21.37102829, 20.94248566  ,21.00901065, -1.52253807])
+res = np.copy(true_parameters)
 
 clist = consumer_object_list(theta,consumer_data,market_data,mbs_data)
 
-f, grad = macro_ll_test(res,theta,clist)
+f, grad,hess = macro_ll_test(res,theta,clist)
 print(grad)
+
+f2, grad2 = macro_ll_test_2(res,theta,clist)
+print(grad2)
+
 t = test_macro_derivative(res,theta,clist)
 
 
@@ -266,13 +271,17 @@ q0_vec =q0_mkt
 
 
 
-d2a_mkt = d2alpha_list[ind,:,:]
+d2a_mkt = d2a_list[ind,:,:]
 d2q0_mkt = d2q0_list[ind,:,:]
+
+
 vec = x + np.random.rand(len(x))
 
 f, g1 = out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
                         da_mkt,dq0_mkt,out_share,theta)
 
+f2, g2, h = out_share_hessian(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
+                        da_mkt,dq0_mkt,d2a_mkt,d2q0_mkt,out_share,theta)
 
 
 test = np.zeros(len(a_mkt))
@@ -308,8 +317,15 @@ plt.show()
 plt.scatter(-np.log(-a_vec),dist_uncond)
 plt.show()
 
+
+plt.hist(consumer_data[consumer_data[:,3]>=0,2],bins=100)
+plt.show()
+plt.hist(consumer_data[consumer_data[:,3]<0,2],bins=100)
+plt.show()
+
+
+
 ## Likelihood Derivatives
-[18.60501788 18.2243703  18.11671119 17.78669489 17.83259122  0.41309002]
 
 
 test = np.array([31.26264496, 31.04771438, 30.7065461,  30.73619066, 31.11616083,  0.07386583,

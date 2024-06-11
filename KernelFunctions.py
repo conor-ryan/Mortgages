@@ -49,7 +49,7 @@ def macro_likelihood(a_list,c_list_H,c_list_S,q0_list,theta,skip_vec):
 
         skip_mkt = skip_vec[ind]
         skip_share = sum(skip_mkt)/len(skip_mkt)
-        skip_share = 0.0
+        # skip_share = 0.0
 
         # pred_out[o] = outside_share(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,theta.out_share[o])
         pred_out[o] = np.mean(q0_mkt[skip_mkt==False])*(1-skip_share) +  \
@@ -75,7 +75,7 @@ def macro_likelihood_grad(a_list,c_list_H,c_list_S,q0_list,
 
         skip_mkt = skip_vec[ind]
         skip_share = sum(skip_mkt)/len(skip_mkt)
-        skip_share = 0.0
+        # skip_share = 0.0
 
         # out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
         #                            da_mkt,dq0_mkt,theta.out_share[o],theta)
@@ -112,7 +112,7 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,d2q0
 
         skip_mkt = skip_vec[ind]
         skip_share = sum(skip_mkt)/len(skip_mkt)
-        skip_share = 0.0
+        # skip_share = 0.0
 
         d2q0_mkt = d2q0_list[ind]
         # x = theta.N[o]*theta.out_share[o]*(np.dot(grad_alpha,da_mkt) + np.dot(grad_q0,dq0_mkt))

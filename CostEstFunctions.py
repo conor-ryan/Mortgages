@@ -25,6 +25,9 @@ def consumer_revenue(cost_data,HTM_rate_rev,MBS_rate_rev,first_stage):
 
     # Gross revenue expectation w.r.t. balance sheet shock
     ERev = prob_h*rev_h + prob_s*rev_s
+
+    # ERev = first_stage.sigma*(np.log(np.exp(rev_h/first_stage.sigma) + np.exp(rev_s/first_stage.sigma)))
+
     return ERev.to_numpy()
 
 

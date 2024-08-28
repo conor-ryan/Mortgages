@@ -19,38 +19,39 @@ import numpy as np
 # dat - consumer "Data" object
 # mbs - MBS price interpolation object 
 
-def consumer_subset(i,theta,cdf,mdf,mbsdf):
+def consumer_subset(i,theta,cdf,mdf):
     ## Identify relevant market
     market = cdf[theta.market_spec][i]
     mkt_index = mdf[theta.market_spec]==market
     # Identify relevant time period
-    time = int(cdf[theta.time_spec][i])
+    # time = int(cdf[theta.time_spec][i])
 
 
     # Subset appropriate data
     X_i = mdf.loc[mkt_index,theta.demand_spec].to_numpy() # Demand data
-    W_i = mdf.loc[mkt_index,theta.cost_spec].to_numpy() # Lender cost data
-    D_i = cdf.loc[i,theta.discount_spec].to_numpy() # Discount factor data
-    Z_i = cdf.loc[i,theta.cons_spec].to_numpy() # Consumer cost data
+    # W_i = mdf.loc[mkt_index,theta.cost_spec].to_numpy() # Lender cost data
+    # D_i = cdf.loc[i,theta.discount_spec].to_numpy() # Discount factor data
+    Z_i = cdf.loc[i,theta.cost_spec].to_numpy() # Consumer cost data
+    W_i = np.array([Z_i for i in range(X_i.shape[0])])
 
     # Observed equilibrium outcomes 
     lender_obs = int(cdf.loc[i,theta.lender_spec]) # Chosen lender ID
     r_obs = cdf.loc[i,theta.rate_spec] # Observed interest rate
     # out = cdf.loc[i,theta.out_spec] # Outside option share (will be updated)
     out = int(cdf.loc[i,theta.out_index]) # Outside option share (will be updated)
-    # Mortgage Backed Security interpolation
-    prices = mbsdf.loc[time,theta.mbs_spec].to_numpy() # relevant MBS coupon prices
-    mbs = ModelTypes.MBS_Func(theta.mbs_coupons,prices) # create MBS object
+    # # Mortgage Backed Security interpolation
+    # prices = mbsdf.loc[time,theta.mbs_spec].to_numpy() # relevant MBS coupon prices
+    # mbs = ModelTypes.MBS_Func(theta.mbs_coupons,prices) # create MBS object
 
     # Create consumer data object
-    dat = ModelTypes.Data(i,X_i,W_i,D_i,Z_i,lender_obs,r_obs,out) 
+    dat = ModelTypes.Data(i,X_i,W_i,Z_i,lender_obs,r_obs,out) 
 
     # Skip consumers that are below a certain margin threshold
-    prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(r_obs,X_i.shape[0]),dat,theta,mbs)
+    prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(r_obs,X_i.shape[0]),dat,theta)
     obs_margin = prof[lender_obs]/dprof[lender_obs]
     dat.skip = obs_margin<(-1/theta.alpha_min)
 
-    return dat, mbs
+    return dat
 
 
 ### Consumer Data List Function
@@ -64,12 +65,12 @@ def consumer_subset(i,theta,cdf,mdf,mbsdf):
 # --- dat - consumer "Data" object
 # --- mbs - MBS price interpolation object 
 
-def consumer_object_list(theta,cdf,mdf,mbsdf):
+def consumer_object_list(theta,cdf,mdf):
     consumer_list = list()
     skip_tracking = np.zeros(cdf.shape[0])
     for i in range(cdf.shape[0]):
-        dat,mbs = consumer_subset(i,theta,cdf,mdf,mbsdf)
-        consumer_list.append({'dat':dat,'mbs':mbs})
+        dat = consumer_subset(i,theta,cdf,mdf)
+        consumer_list.append({'dat':dat})
         skip_tracking[i] = dat.skip
     theta.construct_out_index(cdf)
     print("Fraction Dropped on Margin Threshold",np.mean(skip_tracking))
@@ -77,7 +78,7 @@ def consumer_object_list(theta,cdf,mdf,mbsdf):
 
 
 ###### Function for skipped observations #######
-def skipped_consumer_likelihood(theta,d,m):
+def skipped_consumer_likelihood(theta,d):
         ll_i = 0.0
         dll_i = np.zeros(len(theta.all()))
         d2ll_i = 0.0
@@ -87,7 +88,7 @@ def skipped_consumer_likelihood(theta,d,m):
         da = np.zeros(len(theta.all()))
         d2q0 = np.zeros((len(theta.all()),len(theta.all())))
         d2a = np.zeros((len(theta.all()),len(theta.all())))
-        prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(d.r_obs,d.X.shape[0]),d,theta,m)
+        prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(d.r_obs,d.X.shape[0]),d,theta)
         alpha = -dprof[d.lender_obs]/prof[d.lender_obs]
 
         if alpha<-5000 or dprof[d.lender_obs]<0:
@@ -107,16 +108,16 @@ def skipped_consumer_likelihood(theta,d,m):
 # Outputs
 # ll_i - consumer contribution to log likelihood
 # itr - number of interations to solve equilibrium 
-def consumer_likelihood_eval(theta,d,m,model="base"):
+def consumer_likelihood_eval(theta,d,model="base"):
     # Initial attempt to solve the equilibrium given current parameter guess
     if d.skip:
-        ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,sb,ab = skipped_consumer_likelihood(theta,d,m)
+        ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,sb,ab = skipped_consumer_likelihood(theta,d)
         return ll_i, q0, alpha,1
     
-    alpha, r_eq, itr,success = EquilibriumFunctions.solve_eq_r_optim(d.r_obs,d.lender_obs,d,theta,m,model=model)
+    alpha, r_eq, itr,success = EquilibriumFunctions.solve_eq_r_optim(d.r_obs,d.lender_obs,d,theta,model=model)
     if not success: # Fast algorithm failed to converge, use robust algorithm
         # Robust equilibrium solution
-        alpha, r_eq, itr = EquilibriumFunctions.solve_eq_r_robust(d.r_obs,d.lender_obs,d,theta,m,model=model)
+        alpha, r_eq, itr = EquilibriumFunctions.solve_eq_r_robust(d.r_obs,d.lender_obs,d,theta,model=model)
         print("Robust Eq Method",d.i,itr) # An indication of the stability of the algorithm
  
     #Compute market shares
@@ -149,16 +150,16 @@ def consumer_likelihood_eval(theta,d,m,model="base"):
 # dll_i - consumer contribution to gradient of the log likelihood
 # itr - number of interations to solve equilibrium 
 
-def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
+def consumer_likelihood_eval_gradient(theta,d,model="base"):
     if d.skip:
-        ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,sb,ab = skipped_consumer_likelihood(theta,d,m)
+        ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,sb,ab = skipped_consumer_likelihood(theta,d)
         return ll_i, dll_i, q0, dq0, alpha, da, sb
 
      # Initial attempt to solve the equilibrium given current parameter guess
-    alpha, r_eq, itr,success = EquilibriumFunctions.solve_eq_r_optim(d.r_obs,d.lender_obs,d,theta,m,model=model)
+    alpha, r_eq, itr,success = EquilibriumFunctions.solve_eq_r_optim(d.r_obs,d.lender_obs,d,theta,model=model)
     if not success: # Fast algorithm failed to converge, use robust algorithm
         # Robust equilibrium solution
-        alpha, r_eq, itr = EquilibriumFunctions.solve_eq_r_robust(d.r_obs,d.lender_obs,d,theta,m,model=model)
+        alpha, r_eq, itr = EquilibriumFunctions.solve_eq_r_robust(d.r_obs,d.lender_obs,d,theta,model=model)
         print("Robust Eq Method",d.i,itr) # An indication of the stability of the algorithm
 
 
@@ -193,8 +194,8 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
         da = np.zeros(len(theta.all()))
     else: # Everything is fine to compute gradient
         # Compute log share gradients
-        dlogq_uncond, dq0, da = Derivatives.share_parameter_derivatives(r_eq,alpha,d,theta,m,model=model)
-        dlogq = TestConditionalFunctions.conditional_parameter_derivatives(r_eq,alpha,d,theta,m,model=model)
+        dlogq_uncond, dq0, da = Derivatives.share_parameter_derivatives(r_eq,alpha,d,theta,model=model)
+        dlogq = TestConditionalFunctions.conditional_parameter_derivatives(r_eq,alpha,d,theta,model=model)
         # Compute likelihood and probability weight gradients
         dll_i = dlogq[:,d.lender_obs] #+ dq0/(1-q0)
         dll_i = dll_i#*(1-sb)
@@ -212,17 +213,17 @@ def consumer_likelihood_eval_gradient(theta,d,m,model="base"):
 # dll_i - consumer contribution to gradient of the log likelihood
 # d2ll_i - consumer contribution to hessian of the log likelihood
 # itr - number of interations to solve equilibrium 
-def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
+def consumer_likelihood_eval_hessian(theta,d,model="base"):
     if d.skip:
-        ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,sb,ab = skipped_consumer_likelihood(theta,d,m)
+        ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,sb,ab = skipped_consumer_likelihood(theta,d)
         return ll_i, dll_i,d2ll_i, q0, dq0,d2q0, alpha, da,d2a,sb, ab
 
      # Initial attempt to solve the equilibrium given current parameter guess
-    alpha, r_eq, itr,success,ab = EquilibriumFunctions.solve_eq_r_optim(d.r_obs,d.lender_obs,d,theta,m,model=model,return_bound=True)
+    alpha, r_eq, itr,success,ab = EquilibriumFunctions.solve_eq_r_optim(d.r_obs,d.lender_obs,d,theta,model=model,return_bound=True)
     if not success: # Fast algorithm failed to converge, use robust algorithm
         # Robust equilibrium solution
         ab = 0 
-        alpha, r_eq, itr = EquilibriumFunctions.solve_eq_r_robust(d.r_obs,d.lender_obs,d,theta,m,model=model)
+        alpha, r_eq, itr = EquilibriumFunctions.solve_eq_r_robust(d.r_obs,d.lender_obs,d,theta,model=model)
         print("Robust Eq Method",d.i,itr) # An indication of the stability of the algorithm
 
     # Compute market shares
@@ -260,8 +261,8 @@ def consumer_likelihood_eval_hessian(theta,d,m,model="base"):
         d2a = np.zeros((len(theta.all()),len(theta.all())))
     else: # Everything is fine to evaluate gradient and hessian
         # Compute log share derivatives and second derivatives
-        dlogq_uncond, d2logq_uncond, dq0,d2q0, da,d2a  = Derivatives.share_parameter_second_derivatives(r_eq,alpha,d,theta,m,model=model)
-        dlogq, d2logq = TestConditionalFunctions.conditional_parameter_second_derivatives(r_eq,alpha,d,theta,m,model=model)
+        dlogq_uncond, d2logq_uncond, dq0,d2q0, da,d2a  = Derivatives.share_parameter_second_derivatives(r_eq,alpha,d,theta,model=model)
+        dlogq, d2logq = TestConditionalFunctions.conditional_parameter_second_derivatives(r_eq,alpha,d,theta,model=model)
         # Compute likelihood and probability weight gradients
         dll_i = dlogq[:,d.lender_obs] #+ dq0/(1-q0)
         # Compute likelihood and probability weight hessians
@@ -310,7 +311,7 @@ def evaluate_likelihood(x,theta,clist,parallel=False,num_workers=0,model="base")
     if parallel: 
         if num_workers<2:
             raise Exception("Number of workers not set (or less than one) in parallel estimation")
-        args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
+        args = [(theta,c_val['dat']) for c_val in clist]
         res = ParallelFunctions.eval_map_likelihood(args,num_workers)
 
     # Iterate over all consumers to compute likelihood
@@ -323,15 +324,15 @@ def evaluate_likelihood(x,theta,clist,parallel=False,num_workers=0,model="base")
         else:
             # Evaluate likelihood for consumer i 
             dat = clist[i]['dat']
-            mbs = clist[i]['mbs']       
-            ll_i,q0_i,a_i,itr = consumer_likelihood_eval(theta,dat,mbs,model=model)
+            # mbs = clist[i]['mbs']       
+            ll_i,q0_i,a_i,itr = consumer_likelihood_eval(theta,dat,model=model)
         
         ll_micro += ll_i
         ## Collect consumer level info for implied outside option share
         alpha_list[i] = a_i
         q0_list[i] = q0_i
-        c_list_H[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZH)
-        c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZS)
+        c_list_H[i] = np.dot(np.transpose(dat.Z),theta.gamma_WH)
+        c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_WS)
         skipped_list[i] = dat.skip
 
     # Combine Micro and Macro Likelihood Moments
@@ -383,7 +384,7 @@ def evaluate_likelihood_gradient(x,theta,clist,parallel=False,num_workers=0,mode
     if parallel: 
         if num_workers<2:
             raise Exception("Number of workers not set (or less than one) in parallel estimation")
-        args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
+        args = [(theta,c_val['dat']) for c_val in clist]
         res = ParallelFunctions.eval_map_likelihood_gradient(args,num_workers)
 
     # Iterate over all consumers to compute likelihood
@@ -396,8 +397,8 @@ def evaluate_likelihood_gradient(x,theta,clist,parallel=False,num_workers=0,mode
         else:
             # Evaluate likelihood for consumer i 
             dat = clist[i]['dat']
-            mbs = clist[i]['mbs']       
-            ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i = consumer_likelihood_eval_gradient(theta,dat,mbs,model=model)
+            # mbs = clist[i]['mbs']       
+            ll_i,dll_i,q0_i,dq0_i,a_i,da_i,sb_i = consumer_likelihood_eval_gradient(theta,dat,model=model)
 
         ll_micro += ll_i
         dll_micro += dll_i
@@ -405,8 +406,8 @@ def evaluate_likelihood_gradient(x,theta,clist,parallel=False,num_workers=0,mode
         ## Collect consumer level info for implied outside option share
         alpha_list[i] = a_i
         q0_list[i] = q0_i
-        c_list_H[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZH)
-        c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZS)
+        c_list_H[i] = np.dot(np.transpose(dat.Z),theta.gamma_WH)
+        c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_WS)
 
         dalpha_list[i,:] = da_i
         dq0_list[i,:] = dq0_i
@@ -473,7 +474,7 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
     if parallel: 
         if num_workers<2:
             raise Exception("Number of workers not set (or less than one) in parallel estimation")
-        args = [(theta,c_val['dat'],c_val['mbs']) for c_val in clist]
+        args = [(theta,c_val['dat']) for c_val in clist]
         res = ParallelFunctions.eval_map_likelihood_hessian(args,num_workers)
 
     # Iterate over all consumers to compute likelihood
@@ -486,8 +487,8 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
         else:
             # Evaluate likelihood for consumer i 
             dat = clist[i]['dat']
-            mbs = clist[i]['mbs']       
-            ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb_i,ab_i  = consumer_likelihood_eval_hessian(theta,dat,mbs,model=model)
+            # mbs = clist[i]['mbs']       
+            ll_i,dll_i,d2ll_i,q0_i,dq0_i,d2q0_i,a_i,da_i,d2a_i,sb_i,ab_i  = consumer_likelihood_eval_hessian(theta,dat,model=model)
 
 
         ll_micro += ll_i
@@ -496,8 +497,8 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
 
         alpha_list[i] = a_i
         q0_list[i] = q0_i
-        c_list_H[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZH)
-        c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_ZS)
+        c_list_H[i] = np.dot(np.transpose(dat.Z),theta.gamma_WH)
+        c_list_S[i] = np.dot(np.transpose(dat.Z),theta.gamma_WS)
 
         dalpha_list[i,:] = da_i
         dq0_list[i,:] = dq0_i
@@ -542,7 +543,7 @@ def evaluate_likelihood_hessian(x,theta,clist,parallel=False,num_workers=0,model
 # Outputs
 # ll_k - maximized likelihood
 # x - estimated parameter vector 
-def estimate_NR(x,theta,cdf,mdf,mbsdf,
+def estimate_NR(x,theta,cdf,mdf,
                 parallel=False,num_workers=0,
                 gtol=1e-6,xtol=1e-12,
                 max_step_size = 10,
@@ -552,7 +553,7 @@ def estimate_NR(x,theta,cdf,mdf,mbsdf,
     test_index = theta.beta_x_ind
 
     # Create list of consumer data (could be memory issue, duplicating data)
-    clist = consumer_object_list(theta,cdf,mdf,mbsdf)
+    clist = consumer_object_list(theta,cdf,mdf)
 
     # Exit if number of workers hasn't been specified
     if parallel and (num_workers<2):
@@ -859,16 +860,16 @@ def enforceNegDef(H):
 # Outputs
 # f_val - maximized likelihood
 # res - estimated parameter vector  
-def maximize_likelihood(x,theta,cdf,mdf,mbsdf):
+def maximize_likelihood(x,theta,cdf,mdf):
     print("Gradient Ascent Stage - Find Better Starting Parameter")
     # f_val, pre_start = estimate_GA(x,theta,cdf,mdf,mbsdf)
     print("Newton - Raphson Stage - Maximize Likelihood Function")
-    f_val, res = estimate_NR(x,theta,cdf,mdf,mbsdf)
+    f_val, res = estimate_NR(x,theta,cdf,mdf)
     return f_val, res
 
 
 
-def predicted_elasticity(x,theta,cdf,mdf,mbsdf,model="base"):
+def predicted_elasticity(x,theta,cdf,mdf,model="base"):
     # Set parameters in the parameter object
     theta.set_demand(x)
 
@@ -878,10 +879,10 @@ def predicted_elasticity(x,theta,cdf,mdf,mbsdf,model="base"):
     # Iterate over all consumers
     for i in range(cdf.shape[0]):
         # Subset data for consumer i
-        dat, mbs = consumer_subset(i,theta,cdf,mdf,mbsdf)
+        dat = consumer_subset(i,theta,cdf,mdf)
         # Evaluate likelihood for consumer i 
-        ll_i,q0_i,a_i,itr = consumer_likelihood_eval(theta,dat,mbs,model=model)
-        r, itr,flag= EquilibriumFunctions.solve_eq_optim(a_i,dat,theta,mbs)
+        ll_i,q0_i,a_i,itr = consumer_likelihood_eval(theta,dat,model=model)
+        r, itr,flag= EquilibriumFunctions.solve_eq_optim(a_i,dat,theta)
         q = ModelFunctions.market_shares(r,a_i,dat,theta)
         alpha_list[i] = a_i
         elas[i] = a_i*dat.r_obs*(1-q[dat.lender_obs])

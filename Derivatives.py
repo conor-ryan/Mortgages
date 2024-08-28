@@ -11,13 +11,13 @@ import EstimationFunctions
 # theta - parameter object
 # m - MBS pricing function (may change this when using MBS data)
 
-def d_foc(r,alpha,d,theta,m,model="base"):
+def d_foc(r,alpha,d,theta,model="base"):
 
     # Profit and Derivative
     if model=="base":
-        pi,dpi_dr,d2pi_dr2 = d2SaleProfit_dr2(r,d,theta,m)
-    elif model=="hold":
-        pi,dpi_dr,d2pi_dr2 = d2HoldOnly_dr2(r,d,theta)
+        pi,dpi_dr,d2pi_dr2 = d2SaleProfit_dr2(r,d,theta)
+    # elif model=="hold":
+    #     pi,dpi_dr,d2pi_dr2 = d2HoldOnly_dr2(r,d,theta)
 
     # Market Shares and Derivatives
     q =  market_shares(r,alpha,d,theta)
@@ -63,14 +63,14 @@ def d_foc(r,alpha,d,theta,m,model="base"):
     return dFOC_dalpha, dFOC_dr, dEPidr
 
 
-def d_foc_all_parameters(r,alpha,d,theta,m,model="base"):
+def d_foc_all_parameters(r,alpha,d,theta,model="base"):
 
     # Profit and Derivative
     # Profit and Derivative
     if model=="base":
-        pi,dpi_dr,d2pi_dr2 = d2SaleProfit_dr2(r,d,theta,m)
-    elif model=="hold":
-        pi,dpi_dr,d2pi_dr2 = d2HoldOnly_dr2(r,d,theta)
+        pi,dpi_dr,d2pi_dr2 = d2SaleProfit_dr2(r,d,theta)
+    # elif model=="hold":
+        # pi,dpi_dr,d2pi_dr2 = d2HoldOnly_dr2(r,d,theta)
 
 
     # Market Shares and Derivatives
@@ -101,7 +101,7 @@ def d_foc_all_parameters(r,alpha,d,theta,m,model="base"):
 
     ## Derivative of FOC w.r.t. gamma - Columns: FOC_j, Rows: gamma_k
     # dFOC_dgamma = -np.transpose(np.concatenate((d.W,np.tile(d.Z,(5,1))),axis=1))
-    dFOC_dgamma = -np.transpose(np.concatenate((d.W,np.tile(d.Z,(5,1))),axis=1))*(np.tile(alpha*(1-q),(d.W.shape[1] + d.Z.shape[0],1)))
+    dFOC_dgamma = -np.transpose(d.W)*(np.tile(alpha*(1-q),(d.W.shape[1],1)))
 
     ## Derivative of FOC_j w.r.t. r_k - Columns: FOC_j, Rows: r_k (der ) 
     dFOC_dr = np.tile(pi,(len(q),1))*(alpha**2)*(q_mat*q_mat_t)
@@ -111,13 +111,13 @@ def d_foc_all_parameters(r,alpha,d,theta,m,model="base"):
 
     return dFOC_dalpha, dFOC_dr, dFOC_dbeta_x, dFOC_dgamma
 
-def d2_foc_all_parameters(r,alpha,d,theta,m,model="base"):
+def d2_foc_all_parameters(r,alpha,d,theta,model="base"):
 
     # Profit and Derivative
     if model=="base":
-        pi,dpi_dr,d2pi_dr2,d3pi_dr3 = d3SaleProfit_dr3(r,d,theta,m)
-    elif model=="hold":
-        pi,dpi_dr,d2pi_dr2,d3pi_dr3 = d3HoldOnly_dr3(r,d,theta)
+        pi,dpi_dr,d2pi_dr2,d3pi_dr3 = d3SaleProfit_dr3(r,d,theta)
+    # elif model=="hold":
+        # pi,dpi_dr,d2pi_dr2,d3pi_dr3 = d3HoldOnly_dr3(r,d,theta)
 
     
     # # Market Shares and Derivatives
@@ -178,7 +178,7 @@ def d2_foc_all_parameters(r,alpha,d,theta,m,model="base"):
     #     d2FOC_dbeta_x2[j,:,:]  = -pi*alpha*d2qdbeta_x[:,:,j]
     
     ## Derivative of FOC w.r.t. gamma - Columns: FOC_j, Rows: gamma_k
-    dFOC_dgamma = -np.transpose(np.concatenate((d.W,np.tile(d.Z,(5,1))),axis=1))*(np.tile(alpha*(1-q),(d.W.shape[1] + d.Z.shape[0],1)))
+    dFOC_dgamma = -np.transpose(d.W)*(np.tile(alpha*(1-q),(d.W.shape[1],1)))
 
 
     ## Derivative of FOC_j w.r.t. r_k - Columns: FOC_j, Rows: r_k (der ) 
@@ -277,7 +277,7 @@ def d2_foc_all_parameters(r,alpha,d,theta,m,model="base"):
     d2FOC_dendo2[:,:,d.lender_obs] = np.transpose(d2FOC_drdalpha)
     d2FOC_dendo2[:,d.lender_obs,d.lender_obs] = d2FOC_dalpha2
 
-    L = d.W.shape[1] + d.Z.shape[0]
+    L = d.W.shape[1] 
     d2FOC_dpar2 = np.zeros((J,K+L,K+L))
     d2FOC_dpar2[:,0:K,0:K] = d2FOC_dbeta_x2
     
@@ -293,9 +293,9 @@ def d2_foc_all_parameters(r,alpha,d,theta,m,model="base"):
     return dFOC_dendo, dFOC_dpar, d2FOC_dendo2,d2FOC_dendodpar,d2FOC_dpar2
 
 
-def share_parameter_second_derivatives(r,alpha,d,theta,m,model="base"):
+def share_parameter_second_derivatives(r,alpha,d,theta,model="base"):
     ## Evaluate all FOC derivatives
-    df_dendo,df_dtheta, d2f_dendo2, d2f_dendodtheta, d2f_dtheta2 = d2_foc_all_parameters(r,alpha,d,theta,m,model=model)
+    df_dendo,df_dtheta, d2f_dendo2, d2f_dendodtheta, d2f_dtheta2 = d2_foc_all_parameters(r,alpha,d,theta,model=model)
 
     dendo_dtheta = -np.transpose(np.dot(np.linalg.inv(df_dendo),df_dtheta))
 
@@ -320,7 +320,7 @@ def share_parameter_second_derivatives(r,alpha,d,theta,m,model="base"):
     #     dendo_dtheta = np.zeros(dendo_dtheta.shape)
     #     d2endo_dtheta2 = np.zeros(d2endo_dtheta2.shape)
 
-    q, dqdr, d2qdr2, dqdalpha,d2qdalpha2,d2qdrdalpha, dqdbeta_x, d2qdbeta_x,d2qdbetadr, d2qdbetadalpha = share_partial_deriv(r,alpha,d,theta,m)
+    q, dqdr, d2qdr2, dqdalpha,d2qdalpha2,d2qdrdalpha, dqdbeta_x, d2qdbeta_x,d2qdbetadr, d2qdbetadalpha = share_partial_deriv(r,alpha,d,theta)
 
     
     ## Derivative of shares w.r.t. cost parameters is 0.
@@ -382,11 +382,11 @@ def share_parameter_second_derivatives(r,alpha,d,theta,m,model="base"):
 
 
 
-def share_parameter_derivatives(r,alpha,d,theta,m,model="base"):
+def share_parameter_derivatives(r,alpha,d,theta,model="base"):
     ## Evaluate all FOC derivatives
-    dfdalph, df_dr, df_db, df_dg = d_foc_all_parameters(r,alpha,d,theta,m,model=model)
+    dfdalph, df_dr, df_db, df_dg = d_foc_all_parameters(r,alpha,d,theta,model=model)
 
-    q, dqdr, d2qdr2, dqdalpha,d2qdalpha2,d2qdrdalpha, dqdbeta_x, d2qdbeta_x,d2qdbetadr, d2qdbetadalpha = share_partial_deriv(r,alpha,d,theta,m)
+    q, dqdr, d2qdr2, dqdalpha,d2qdalpha2,d2qdrdalpha, dqdbeta_x, d2qdbeta_x,d2qdbetadr, d2qdbetadalpha = share_partial_deriv(r,alpha,d,theta)
 
     ## Replace the observed interest rate with the alpha parameter
     df_dendo = np.transpose(np.copy(df_dr))
@@ -437,7 +437,7 @@ def share_parameter_derivatives(r,alpha,d,theta,m,model="base"):
     # return dendo_dtheta
 
 
-def share_partial_deriv(r,alpha,d,theta,m):
+def share_partial_deriv(r,alpha,d,theta):
      # Market Shares and Derivatives
     q =  market_shares(r,alpha,d,theta)
     J = len(q)

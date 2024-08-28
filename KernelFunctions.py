@@ -59,8 +59,8 @@ def macro_likelihood(a_list,c_list_H,c_list_S,q0_list,theta):
         c_mkt_H = c_list_H[ind]
         c_mkt_S = c_list_S[ind]
 
-        pred_out[o] = outside_share(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,theta.out_share[o])
-        # pred_out[o] = np.mean(q0_mkt)
+        # pred_out[o] = outside_share(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,theta.out_share[o])
+        pred_out[o] = np.mean(q0_mkt)
     print("Outside Share",pred_out)
     ll_macro = np.sum(theta.N*theta.out_share*np.log(pred_out)) + \
                     np.sum(theta.N*(1-theta.out_share)*np.log(1-pred_out))
@@ -81,10 +81,10 @@ def macro_likelihood_grad(a_list,c_list_H,c_list_S,q0_list,
         da_mkt = da_list[ind]#[theta.out_sample[o]]
         dq0_mkt = dq0_list[ind]#[theta.out_sample[o]]
 
-        out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
-                                   da_mkt,dq0_mkt,theta.out_share[o],theta)
-        # out = np.mean(q0_mkt)
-        # g = np.mean(dq0_mkt,0)
+        # out, g= out_share_gradient(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
+        #                            da_mkt,dq0_mkt,theta.out_share[o],theta)
+        out = np.mean(q0_mkt)
+        g = np.mean(dq0_mkt,0)
 
         pred_out[o] = out
         x = theta.N[o]*(theta.out_share[o]*(g)/out - (1-theta.out_share[o])*(g)/(1-out) )
@@ -117,18 +117,19 @@ def macro_likelihood_hess(a_list,c_list_H,c_list_S,q0_list,da_list,dq0_list,
         d2a_mkt = d2a_list[ind]
         d2q0_mkt = d2q0_list[ind]
 
-        out, g, h= out_share_hessian(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
-                                   da_mkt,dq0_mkt,
-                                   d2a_mkt,d2q0_mkt,theta.out_share[o],theta)
+        # out, g, h= out_share_hessian(a_mkt,c_mkt_H,c_mkt_S,q0_mkt,
+        #                            da_mkt,dq0_mkt,
+        #                            d2a_mkt,d2q0_mkt,theta.out_share[o],theta)
     
-        # out = np.mean(q0_mkt)
-        # g = np.mean(dq0_mkt,0)
+        out = np.mean(q0_mkt)
+        g = np.mean(dq0_mkt,0)
+        h = np.mean(d2q0_mkt,0)
 
         pred_out[o] = out
         x = theta.N[o]*(theta.out_share[o]*(g)/out - (1-theta.out_share[o])*(g)/(1-out) )
         grad += x
 
-        # h = np.mean(d2q0_mkt,0)
+        
         y = theta.N[o]*theta.out_share[o]*(h/out - np.outer(g,g)/out**2) - \
          theta.N[o]*(1-theta.out_share[o])*(h/(1-out) + np.outer(g,g)/(1-out)**2)
         hess += y

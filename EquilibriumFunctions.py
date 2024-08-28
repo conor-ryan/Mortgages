@@ -10,13 +10,13 @@ import Derivatives
 # theta - parameter object
 # m - MBS pricing function 
 # kwargs (r_start) - allow for an optional starting vector
-def solve_eq(alpha,d,theta,m,model="base",**kwargs):
+def solve_eq(alpha,d,theta,model="base",**kwargs):
     # Define zero profit interest rate which will help bound feasible equi. interest rates
-    r_min = ModelFunctions.min_rate(d,theta,m,model=model) 
+    r_min = ModelFunctions.min_rate(d,theta,model=model) 
 
     # Check if marginal cost pricing is an equilibrium 
     # Occurs if the probability of purchase is very small
-    err_check = ModelFunctions.expected_foc_nonlinear(r_min,alpha,d,theta,m,model=model)
+    err_check = ModelFunctions.expected_foc_nonlinear(r_min,alpha,d,theta,model=model)
     if np.sum(np.square(err_check))<1e-12:
         return r_min, 0
     
@@ -35,7 +35,7 @@ def solve_eq(alpha,d,theta,m,model="base",**kwargs):
     # Initial gradient evaluation
     # foc_k - first order condition value
     # grad_k - gradient of first order condition w.r.t. rates
-    dump, grad_k, foc_k = Derivatives.d_foc(r,alpha,d,theta,m,model=model)
+    dump, grad_k, foc_k = Derivatives.d_foc(r,alpha,d,theta,model=model)
 
     # Initialize error and iteration number
     err = 1 
@@ -53,7 +53,7 @@ def solve_eq(alpha,d,theta,m,model="base",**kwargs):
         r = r_new 
 
         # Evaluate Objective (foc_k) and Gradient (grad_k)
-        dump, grad_k, foc_k =  Derivatives.d_foc(r,alpha,d,theta,m,model=model)
+        dump, grad_k, foc_k =  Derivatives.d_foc(r,alpha,d,theta,model=model)
 
         # Compute sum squared error of first order conditions
         err = np.sum(np.square(foc_k)) 
@@ -68,12 +68,12 @@ def solve_eq(alpha,d,theta,m,model="base",**kwargs):
 # theta - parameter object
 # m - MBS pricing function 
 # kwargs (r_start) - allow for an optional starting vector
-def solve_eq_robust(alpha,d,theta,m,model="base",**kwargs):
+def solve_eq_robust(alpha,d,theta,model="base",**kwargs):
     # Define zero profit interest rate which will help bound feasible equi. interest rates
-    r_min = ModelFunctions.min_rate(d,theta,m,model=model) 
+    r_min = ModelFunctions.min_rate(d,theta,model=model) 
     # Check if marginal cost pricing is an equilibrium 
     # Occurs if the probability of purchase is very small
-    err_check = ModelFunctions.expected_foc_nonlinear(r_min,alpha,d,theta,m,model=model)
+    err_check = ModelFunctions.expected_foc_nonlinear(r_min,alpha,d,theta,model=model)
     if np.sum(np.square(err_check))<1e-12:
         return r_min, 0
 
@@ -90,7 +90,7 @@ def solve_eq_robust(alpha,d,theta,m,model="base",**kwargs):
     ## Algorithm is similar to a gradient ascent method
         
     # Initial evaluation of first order condition 
-    foc_k = ModelFunctions.expected_foc_nonlinear(r,alpha,d,theta,m,model=model)
+    foc_k = ModelFunctions.expected_foc_nonlinear(r,alpha,d,theta,model=model)
     # Set initial step size based on FOC magnitudes
     B_k_inv = 0.001/np.max(np.abs(foc_k)) 
 
@@ -118,7 +118,7 @@ def solve_eq_robust(alpha,d,theta,m,model="base",**kwargs):
         step = r_new - r
 
         # Evaluate First Order Condition
-        foc_next = ModelFunctions.expected_foc_nonlinear(r_new,alpha,d,theta,m,model=model)
+        foc_next = ModelFunctions.expected_foc_nonlinear(r_new,alpha,d,theta,model=model)
         # Copy new r value into r variable
         r = np.copy(r_new )
 
@@ -145,9 +145,9 @@ def solve_eq_robust(alpha,d,theta,m,model="base",**kwargs):
 # theta - parameter object
 # m - MBS pricing function 
 # kwargs (r_start) - allow for an optional starting vector
-def solve_eq_very_robust(alpha,d,theta,m,model="base",**kwargs):
+def solve_eq_very_robust(alpha,d,theta,model="base",**kwargs):
     # Define zero profit interest rate which will help bound feasible equi. interest rates
-    r_min = ModelFunctions.min_rate(d,theta,m,model=model) 
+    r_min = ModelFunctions.min_rate(d,theta,model=model) 
 
     # Check if a starting vector was supplied
     r_start = kwargs.get("r_start")
@@ -162,7 +162,7 @@ def solve_eq_very_robust(alpha,d,theta,m,model="base",**kwargs):
     ## Algorithm is similar to a gradient ascent method
         
     # Initial evaluation of first order condition 
-    foc_k = ModelFunctions.expected_foc_nonlinear(r,alpha,d,theta,m,model=model)
+    foc_k = ModelFunctions.expected_foc_nonlinear(r,alpha,d,theta,model=model)
     # Set small initial step size 
     B_k_inv = np.repeat(1e-6,len(r))
 
@@ -190,7 +190,7 @@ def solve_eq_very_robust(alpha,d,theta,m,model="base",**kwargs):
         step = r_new - r
 
         # Evaluate First Order Condition
-        foc_next = ModelFunctions.expected_foc_nonlinear(r_new,alpha,d,theta,m,model=model)
+        foc_next = ModelFunctions.expected_foc_nonlinear(r_new,alpha,d,theta,model=model)
         # Update r vector
         r = np.copy(r_new )
 
@@ -218,9 +218,9 @@ def solve_eq_very_robust(alpha,d,theta,m,model="base",**kwargs):
 # d - data object
 # theta - parameter object
 # m - MBS pricing function
-def solve_eq_r(r0,j,d,theta,m,itr_max=100,model="base"):
+def solve_eq_r(r0,j,d,theta,itr_max=100,model="base"):
     # Define zero profit interest rate which will help bound feasible equi. interest rates
-    r_min = ModelFunctions.min_rate(d,theta,m,model=model) 
+    r_min = ModelFunctions.min_rate(d,theta,model=model) 
 
     #### Return Without solving if observed price is below marginal cost
     if r0 < r_min[j]:
@@ -236,7 +236,7 @@ def solve_eq_r(r0,j,d,theta,m,itr_max=100,model="base"):
         return alpha,r_min,-2
     
     # Initial equilibrium solution given starting guess
-    r, itr = solve_eq(alpha,d,theta,m,model=model)
+    r, itr = solve_eq(alpha,d,theta,model=model)
 
     ### Check advantage again after initial equilibrium
     q_init = ModelFunctions.market_shares(r,alpha,d,theta)
@@ -255,7 +255,7 @@ def solve_eq_r(r0,j,d,theta,m,itr_max=100,model="base"):
     # foc_k - first order condition value (objective function)
     # grad_k - gradient of first order condition w.r.t. rates
     # grad_alpha - gradient of foc w.r.t. alpha
-    grad_alpha, grad_k, foc_k =  Derivatives.d_foc(r,alpha,d,theta,m,model=model)
+    grad_alpha, grad_k, foc_k =  Derivatives.d_foc(r,alpha,d,theta,model=model)
     # Replace the gradient w.r.t. observed rate with the gradient w.r.t. alpha
     grad_k[j,:] = grad_alpha
 
@@ -287,7 +287,7 @@ def solve_eq_r(r0,j,d,theta,m,itr_max=100,model="base"):
         r = np.maximum(r,r_min)
 
         # Evaluate foc and gradients
-        grad_alpha, grad_k, foc_k =  Derivatives.d_foc(r,alpha,d,theta,m,model=model)
+        grad_alpha, grad_k, foc_k =  Derivatives.d_foc(r,alpha,d,theta,model=model)
         grad_k[j,:] = grad_alpha # Substitute alpha gradient for observed rate gradient
 
         err = np.sum(np.square(foc_k)) # Compute sum squared error 
@@ -303,9 +303,9 @@ def solve_eq_r(r0,j,d,theta,m,itr_max=100,model="base"):
 # d - data object
 # theta - parameter object
 # m - MBS pricing function
-def solve_eq_r_robust(r0,j,d,theta,m,model="base"):
+def solve_eq_r_robust(r0,j,d,theta,model="base"):
     # Compute zero profit interest rate which will help bound feasible equi. interest rates
-    r_min = ModelFunctions.min_rate(d,theta,m,model=model) 
+    r_min = ModelFunctions.min_rate(d,theta,model=model) 
 
     # Return Without solving if observed price is below marginal cost
     if r0 < r_min[j]:
@@ -318,11 +318,11 @@ def solve_eq_r_robust(r0,j,d,theta,m,model="base"):
     # Solve equilibrium at initial alpha guess
     # Apply increasingly robust solution methods for greater values of alpha
     if alpha>(-800):
-        r, itr = solve_eq(alpha,d,theta,m,model=model)
+        r, itr = solve_eq(alpha,d,theta,model=model)
     elif alpha>(-10000):
-        r, itr = solve_eq_robust(alpha,d,theta,m,model=model)
+        r, itr = solve_eq_robust(alpha,d,theta,model=model)
     else: 
-        r, itr = solve_eq_very_robust(alpha,d,theta,m,model=model)
+        r, itr = solve_eq_very_robust(alpha,d,theta,model=model)
 
     # Initialize step size for alpha
     B_k_inv = 10
@@ -349,11 +349,11 @@ def solve_eq_r_robust(r0,j,d,theta,m,model="base"):
         # Solve equilibrium at new alpha guess
         # Apply increasingly robust solution methods for greater values of alpha
         if alpha>(-900):
-            r, i_new = solve_eq(alpha,d,theta,m,model=model)
+            r, i_new = solve_eq(alpha,d,theta,model=model)
         elif alpha>(-10000):
-            r, i_new = solve_eq_robust(alpha,d,theta,m,model=model)
+            r, i_new = solve_eq_robust(alpha,d,theta,model=model)
         else: 
-            r, i_new = solve_eq_very_robust(alpha,d,theta,m,model=model)
+            r, i_new = solve_eq_very_robust(alpha,d,theta,model=model)
 
         # Update total number of iterations
         itr+= i_new
@@ -376,13 +376,13 @@ def solve_eq_r_robust(r0,j,d,theta,m,model="base"):
     return alpha,r, itr
 
 
-def solve_eq_optim(alpha,d,theta,m,model="base",**kwargs):
+def solve_eq_optim(alpha,d,theta,model="base",**kwargs):
     # Define zero profit interest rate which will help bound feasible equi. interest rates
-    r_min = ModelFunctions.min_rate(d,theta,m,model=model) 
+    r_min = ModelFunctions.min_rate(d,theta,model=model) 
 
     # Check if marginal cost pricing is an equilibrium 
     # Occurs if the probability of purchase is very small
-    err_check = ModelFunctions.expected_foc_nonlinear(r_min,alpha,d,theta,m,model=model)
+    err_check = ModelFunctions.expected_foc_nonlinear(r_min,alpha,d,theta,model=model)
     if np.sum(np.square(err_check))<1e-12:
         return r_min, 0
     
@@ -397,7 +397,7 @@ def solve_eq_optim(alpha,d,theta,m,model="base",**kwargs):
         r = r_start
 
     def obj_fun(x):
-        dump, grad_k, foc_k = Derivatives.d_foc(x,alpha,d,theta,m,model=model)
+        dump, grad_k, foc_k = Derivatives.d_foc(x,alpha,d,theta,model=model)
         return foc_k, grad_k
     
     res = sp.optimize.root(obj_fun,r,jac=True)
@@ -405,19 +405,19 @@ def solve_eq_optim(alpha,d,theta,m,model="base",**kwargs):
     return res.x, res.nfev, res.success
 
 
-def solve_eq_r_optim(r0,j,d,theta,m,model="base",return_bound=False):
+def solve_eq_r_optim(r0,j,d,theta,model="base",return_bound=False):
     # Try Fast Method
     alpha_bound = 0
     itr_max = 50
-    alpha, r, itr = solve_eq_r(r0,j,d,theta,m,itr_max=itr_max,model=model)
+    alpha, r, itr = solve_eq_r(r0,j,d,theta,itr_max=itr_max,model=model)
     if itr<itr_max:
         # # Bound Alpha Value
         # if alpha < theta.alpha_min:
-        #     r_min = ModelFunctions.min_rate(d,theta,m,model=model)
+        #     r_min = ModelFunctions.min_rate(d,theta,model=model)
         #     prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(r0,len(r_min)),d,theta,m)
         #     # alpha = theta.alpha_min
         #     alpha = -dprof[j]/prof[j]
-        #     # r = ModelFunctions.min_rate(d,theta,m,model=model) - 1/theta.alpha_min
+        #     # r = ModelFunctions.min_rate(d,theta,model=model) - 1/theta.alpha_min
         #     r = r_min - 1/alpha
         #     alpha_bound = 1
         if return_bound:
@@ -427,7 +427,7 @@ def solve_eq_r_optim(r0,j,d,theta,m,model="base",return_bound=False):
     
     # print("Using Optim",d.i)
     # Define zero profit interest rate which will help bound feasible equi. interest rates
-    r_min = ModelFunctions.min_rate(d,theta,m,model=model)
+    r_min = ModelFunctions.min_rate(d,theta,model=model)
     if model=="base": 
         prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(r0,len(r_min)),d,theta,m)
     elif model=="hold":
@@ -454,8 +454,8 @@ def solve_eq_r_optim(r0,j,d,theta,m,model="base",return_bound=False):
         r = np.copy(x)
         r[j] = r0
         alpha = x[j]
-        # f = ModelFunctions.expected_foc_nonlinear(r,alpha,d,theta,m,model=model)
-        g_alpha, grad, f = Derivatives.d_foc(r,alpha,d,theta,m,model=model)
+        # f = ModelFunctions.expected_foc_nonlinear(r,alpha,d,theta,model=model)
+        g_alpha, grad, f = Derivatives.d_foc(r,alpha,d,theta,model=model)
         grad[j,:] = g_alpha
     
         obj = np.inner(f,f)

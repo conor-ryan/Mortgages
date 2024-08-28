@@ -3,7 +3,7 @@ import Derivatives
 import EquilibriumFunctions
 import ModelFunctions
 
-def conditional_partial_deriv(r,alpha,d,theta,m):
+def conditional_partial_deriv(r,alpha,d,theta):
      # Market Shares and Derivatives
     q =  ModelFunctions.conditional_shares(r,alpha,d,theta)
     J = len(q)
@@ -65,9 +65,9 @@ def conditional_partial_deriv(r,alpha,d,theta,m):
     return q, dqdr, d2qdr2, dqdalpha,d2qdalpha2, d2qdrdalpha, dqdbeta_x, d2qdbeta_x, d2qdbetadr, d2qdbetadalpha
 
 
-def conditional_parameter_second_derivatives(r,alpha,d,theta,m,model="base"):
+def conditional_parameter_second_derivatives(r,alpha,d,theta,model="base"):
     ## Evaluate all FOC derivatives
-    df_dendo,df_dtheta, d2f_dendo2, d2f_dendodtheta, d2f_dtheta2 = Derivatives.d2_foc_all_parameters(r,alpha,d,theta,m,model=model)
+    df_dendo,df_dtheta, d2f_dendo2, d2f_dendodtheta, d2f_dtheta2 = Derivatives.d2_foc_all_parameters(r,alpha,d,theta,model=model)
 
     dendo_dtheta = -np.transpose(np.dot(np.linalg.inv(df_dendo),df_dtheta))
 
@@ -92,7 +92,7 @@ def conditional_parameter_second_derivatives(r,alpha,d,theta,m,model="base"):
         dendo_dtheta = np.zeros(dendo_dtheta.shape)
         d2endo_dtheta2 = np.zeros(d2endo_dtheta2.shape)
 
-    q, dqdr, d2qdr2, dqdalpha,d2qdalpha2,d2qdrdalpha, dqdbeta_x, d2qdbeta_x,d2qdbetadr, d2qdbetadalpha = conditional_partial_deriv(r,alpha,d,theta,m)
+    q, dqdr, d2qdr2, dqdalpha,d2qdalpha2,d2qdrdalpha, dqdbeta_x, d2qdbeta_x,d2qdbetadr, d2qdbetadalpha = conditional_partial_deriv(r,alpha,d,theta)
 
     
     ## Derivative of shares w.r.t. cost parameters is 0.
@@ -154,11 +154,11 @@ def conditional_parameter_second_derivatives(r,alpha,d,theta,m,model="base"):
 
 
 
-def conditional_parameter_derivatives(r,alpha,d,theta,m,model="base"):
+def conditional_parameter_derivatives(r,alpha,d,theta,model="base"):
     ## Evaluate all FOC derivatives
-    dfdalph, df_dr, df_db, df_dg = Derivatives.d_foc_all_parameters(r,alpha,d,theta,m,model=model)
+    dfdalph, df_dr, df_db, df_dg = Derivatives.d_foc_all_parameters(r,alpha,d,theta,model=model)
 
-    q, dqdr, d2qdr2, dqdalpha,d2qdalpha2,d2qdrdalpha, dqdbeta_x, d2qdbeta_x,d2qdbetadr, d2qdbetadalpha = conditional_partial_deriv(r,alpha,d,theta,m)
+    q, dqdr, d2qdr2, dqdalpha,d2qdalpha2,d2qdrdalpha, dqdbeta_x, d2qdbeta_x,d2qdbetadr, d2qdbetadalpha = conditional_partial_deriv(r,alpha,d,theta)
 
     ## Replace the observed interest rate with the alpha parameter
     df_dendo = np.transpose(np.copy(df_dr))
@@ -209,9 +209,9 @@ def conditional_parameter_derivatives(r,alpha,d,theta,m,model="base"):
 
 
 
-def ll_test_function(theta,d,m,model="base"):
+def ll_test_function(theta,d,model="base"):
     # Initial attempt to solve the equilibrium given current parameter guess
-    alpha, r_eq, itr,success = EquilibriumFunctions.solve_eq_r_optim(d.r_obs,d.lender_obs,d,theta,m,model=model)
+    alpha, r_eq, itr,success = EquilibriumFunctions.solve_eq_r_optim(d.r_obs,d.lender_obs,d,theta,model=model)
 
     #Compute market shares
     q = ModelFunctions.conditional_shares(r_eq,alpha,d,theta)

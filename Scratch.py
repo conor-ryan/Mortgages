@@ -18,42 +18,23 @@ from CostEstFunctions import *
 from KernelFunctions import *
 from TestConditionalFunctions import *
 
-# File with Loan-Level Data
-consumer_data_file = "consumer_data_sim.csv"
-
-#### First Stage Specification ####
-# Hold/Sell (Defined as Sell=1)
-sell_spec = "5"
-# Interest Rates (Interacted with Time Fixed Effects)
-# interest_rate_spec = ["x16","x17","x18","x19","x20"]
-interest_rate_spec = ["16","17"]
-mbs_price = "18" #"x21"
-# Consumer/Loan Characteristics
-consumer_spec = ["7","8","9","10","11","12","13","6"]
-# Bank/Aggregate Characteristics - Cost
-# bank_spec = ["x22","x23","x24","x25","x26","x27"]
-bank_spec = ["19","20","21"]
-
-# res, pars = run_first_stage(consumer_data_file,sell_spec,interest_rate_spec,mbs_price,consumer_spec,bank_spec)
-
-
 #### Second Stage Specification ####
-# Consumer/Loan Characteristics - Variables in Consumer Data
-consumer_cost_spec =["7", "8","9","10","11","12","13","6"]
-# Bank Cost Covariates - Variables in Market Data
-bank_cost_spec = ["7","8","9"]
-# Bank Demand Covariates - Variables in Market Data
-bank_dem_spec = ["2","3","4","5","6","0"]
+# # Consumer/Loan Characteristics - Variables in Consumer Data
+# consumer_cost_spec =["7", "8","9","10","11","12","13","6"]
+# # Bank Cost Covariates - Variables in Market Data
+# bank_cost_spec = ["7","8","9"]
+# # Bank Demand Covariates - Variables in Market Data
+# bank_dem_spec = ["2","3","4","5","6","0"]
 
-# Discount Factor Covariates ("Time Dummies or Aggregate Data") - Consumer Data
-discount_spec = ["14","15"]#,"x13","x14","x15"]
+# # Discount Factor Covariates ("Time Dummies or Aggregate Data") - Consumer Data
+# discount_spec = ["14","15"]#,"x13","x14","x15"]
 
-# MBS Price Function Specification
-# Price variables in MBS data
-mbs_spec = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75, 5, 5.25, 5.5, 5.75, 6, 6.25, 6.5, 6.75, 7, 7.25, 7.5, 7.75, 8, 8.25, 8.5, 8.75, 9]
-mbs_spec = [str(p) for p in mbs_spec]
-# Corresponding coupon rates
-mbs_coupons = np.arange(1,9.1,0.25)/100
+# # MBS Price Function Specification
+# # Price variables in MBS data
+# mbs_spec = [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75, 5, 5.25, 5.5, 5.75, 6, 6.25, 6.5, 6.75, 7, 7.25, 7.5, 7.75, 8, 8.25, 8.5, 8.75, 9]
+# mbs_spec = [str(p) for p in mbs_spec]
+# # Corresponding coupon rates
+# mbs_coupons = np.arange(1,9.1,0.25)/100
 
 # Selection and Interest Rate indices
 rate_spec = "4"
@@ -68,6 +49,83 @@ consumer_data = pd.read_csv("consumer_data_sim.csv") # Consumer/Loan level data
 market_data = pd.read_csv("market_data_sim.csv") # Market level data
 mbs_data = pd.read_csv("mbs_data_real_subset.csv") # MBS coupon price data
 share_data = pd.read_csv("share_data_sim.csv") # Aggregate share data
+
+
+# Pre-model stages
+y = consumer_data["5"]
+consumer_ind = ["7","8","9","10","11","12","13"]
+full_spec = ["4"] + consumer_ind
+X = consumer_data[full_spec]
+
+# Estimate Logit Regression
+
+model = Logit(y,X)
+result= model.fit()
+
+psi = result.params.iloc[0]*0.05
+cost_diff = result.params.iloc[1:len(result.params)].to_numpy()*0.05
+sigma = 0.05
+
+C = consumer_data[consumer_ind]*np.transpose(np.tile(consumer_data["4"],(7,1)))
+C[C==0.0] = 1000
+
+cost_tot = np.min(C,0).to_numpy()
+
+prof_adj = sigma*(np.log(1 + np.exp(np.dot(X,result.params))) - np.log(2))
+
+eff_rate = consumer_data["4"] +prof_adj
+
+C = consumer_data[consumer_ind]*np.transpose(np.tile(eff_rate,(7,1)))
+C[C==0.0] = 1000
+gamma_WH = np.min(C,0).to_numpy()
+
+cost_spec = consumer_ind
+bank_dem_spec = ["2", "3", "4", "5", "6"]
+
+
+theta = Parameters(bank_dem_spec,cost_spec,
+                   rate_spec,lender_spec,market_spec,outside_share_index,
+                   cost_diff,sigma,psi,gamma_WH,
+                   share_data["3"],share_data["4"])
+
+theta.gamma_WH = gamma_WH
+theta.gamma_WS = gamma_WH + cost_diff
+
+clist = consumer_object_list(theta,consumer_data,market_data)
+
+dat = clist[0]['dat']
+
+consumer_likelihood_eval(theta,dat)
+
+test = np.zeros(len(theta.beta_x_ind))
+
+ll0 = evaluate_likelihood(test,theta,clist)
+
+
+ll1, grad1 = evaluate_likelihood_gradient(test,theta,clist)
+print(grad1)
+
+
+ll2, grad2,hess2,bfgs = evaluate_likelihood_hessian(test,theta,clist)
+print(grad2)
+
+f_val, pre_start = estimate_NR(test,theta,consumer_data,market_data,parallel=True,num_workers=4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 true_first_stage = ParameterFirstStage(0.04,np.array([0.5,0.25]),
                                        np.array([-0.299,1.1e-4,3e-5,-7.2e-4,0,6.55e-3,7e-5,-0.161]),
@@ -95,11 +153,7 @@ cost_res = estimate_costs(rate_spec,mbs_price,consumer_spec,bank_spec,discount_s
 # #                    -0.01,-0.005,0.002, #Gamma_WH
 # #                    0.32,-1e-4,-1e-4,1e-4,0.00,0.005,0.00,0.1]) # Gamma_ZH
 
-theta = Parameters(bank_dem_spec,bank_cost_spec,consumer_cost_spec,discount_spec,
-                   mbs_spec,mbs_coupons,
-                   rate_spec,lender_spec,market_spec,time_spec,outside_share_index,
-                   true_first_stage,
-                   share_data["3"],share_data["4"])
+
 
 cost_true = np.array([-0.01,-0.005,0.002,#Gamma_WH
                       0.4,-1.4e-4,-3.5e-5,0,0,0.00,0,0.3])

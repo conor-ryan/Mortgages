@@ -384,7 +384,7 @@ def solve_eq_optim(alpha,d,theta,model="base",**kwargs):
     # Occurs if the probability of purchase is very small
     err_check = ModelFunctions.expected_foc_nonlinear(r_min,alpha,d,theta,model=model)
     if np.sum(np.square(err_check))<1e-12:
-        return r_min, 0
+        return r_min, 0, True
     
     # Check if a starting vector was supplied
     r_start = kwargs.get("r_start")
@@ -429,9 +429,9 @@ def solve_eq_r_optim(r0,j,d,theta,model="base",return_bound=False):
     # Define zero profit interest rate which will help bound feasible equi. interest rates
     r_min = ModelFunctions.min_rate(d,theta,model=model)
     if model=="base": 
-        prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(r0,len(r_min)),d,theta,m)
-    elif model=="hold":
-        prof, dprof = ModelFunctions.dHoldOnly_dr(np.repeat(r0,len(r_min)),d,theta)
+        prof, dprof = ModelFunctions.dSaleProfit_dr(np.repeat(r0,len(r_min)),d,theta)
+    # elif model=="hold":
+    #     prof, dprof = ModelFunctions.dHoldOnly_dr(np.repeat(r0,len(r_min)),d,theta)
     
 
     alpha_max = -dprof[j]/prof[j]

@@ -17,7 +17,7 @@ random.seed(2220242381)
 #### Data Size ####
 M = 2 #Markets
 J = 5# Lenders
-N = 1000 # Consumers per market
+N = 2000 # Consumers per market
 
 
 #### Model Parameters
@@ -80,7 +80,7 @@ for i in range(Z.shape[0]):
 α_scale = -100
 
 
-theta = Parameters(β_x,γ_WH,γ_WS,σ,psi)
+theta = Parameters_Sim(β_x,γ_WH,γ_WS,σ,psi)
 
 ## Market Data 
 # Market Index
@@ -178,7 +178,7 @@ final_ind = np.max(consumer_ind) + 1
 # alpha_buy = np.zeros(consumer_data.shape[0])
 # alpha_out = np.zeros(consumer_data.shape[0])
 
-
+# count = 0
 for i in range(consumer_data.shape[0]):
     market = int(consumer_data[i,0])
     market_index = market_data[:,0]==market
@@ -194,6 +194,7 @@ for i in range(consumer_data.shape[0]):
     r_eq, itr1,flag = solve_eq_optim(α,dat,theta)
     if not flag:
         print("WARNING: Failed Equilibirum at",i)
+        break
     # if α>(-200)
     #     r_eq, itr1 = solve_eq(α,dat,θ,MBS_par)
     # else

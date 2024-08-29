@@ -122,7 +122,8 @@ def consumer_likelihood_eval(theta,d,model="base"):
  
     #Compute market shares
     q,sb = ModelFunctions.market_shares(r_eq,alpha,d,theta,return_bound=True)
-    ll_cond = ModelFunctions.conditional_likelihood(r_eq,alpha,d,theta)
+    # ll_cond = ModelFunctions.conditional_likelihood(r_eq,alpha,d,theta)
+    ll_cond = np.log(q)
     # Compute likelihood contribution
     if sb==0:
         ll_i = ll_cond[d.lender_obs]
@@ -165,7 +166,8 @@ def consumer_likelihood_eval_gradient(theta,d,model="base"):
 
     # Compute market shares
     q,sb = ModelFunctions.market_shares(r_eq,alpha,d,theta,return_bound=True)
-    ll_cond = ModelFunctions.conditional_likelihood(r_eq,alpha,d,theta)
+    # ll_cond = ModelFunctions.conditional_likelihood(r_eq,alpha,d,theta)
+    ll_cond = np.log(q)
     # Compute likelihood contribution
     if sb==0:
         ll_i = ll_cond[d.lender_obs]
@@ -194,11 +196,11 @@ def consumer_likelihood_eval_gradient(theta,d,model="base"):
         da = np.zeros(len(theta.all()))
     else: # Everything is fine to compute gradient
         # Compute log share gradients
-        dlogq_uncond, dq0, da = Derivatives.share_parameter_derivatives(r_eq,alpha,d,theta,model=model)
-        dlogq = TestConditionalFunctions.conditional_parameter_derivatives(r_eq,alpha,d,theta,model=model)
+        dlogq, dq0, da = Derivatives.share_parameter_derivatives(r_eq,alpha,d,theta,model=model)
+        # dlogq = TestConditionalFunctions.conditional_parameter_derivatives(r_eq,alpha,d,theta,model=model)
         # Compute likelihood and probability weight gradients
         dll_i = dlogq[:,d.lender_obs] #+ dq0/(1-q0)
-        dll_i = dll_i#*(1-sb)
+        # dll_i = dll_i#*(1-sb)
         dq0 = dq0*(1-sb)
 
     return ll_i, dll_i, q0, dq0, alpha, da, sb
@@ -228,7 +230,8 @@ def consumer_likelihood_eval_hessian(theta,d,model="base"):
 
     # Compute market shares
     q,sb = ModelFunctions.market_shares(r_eq,alpha,d,theta,return_bound=True)
-    ll_cond = ModelFunctions.conditional_likelihood(r_eq,alpha,d,theta)
+    # ll_cond = ModelFunctions.conditional_likelihood(r_eq,alpha,d,theta)
+    ll_cond = np.log(q)
     # Compute likelihood contribution
     if sb==0:
         ll_i = ll_cond[d.lender_obs]
@@ -261,14 +264,14 @@ def consumer_likelihood_eval_hessian(theta,d,model="base"):
         d2a = np.zeros((len(theta.all()),len(theta.all())))
     else: # Everything is fine to evaluate gradient and hessian
         # Compute log share derivatives and second derivatives
-        dlogq_uncond, d2logq_uncond, dq0,d2q0, da,d2a  = Derivatives.share_parameter_second_derivatives(r_eq,alpha,d,theta,model=model)
-        dlogq, d2logq = TestConditionalFunctions.conditional_parameter_second_derivatives(r_eq,alpha,d,theta,model=model)
+        dlogq, d2logq, dq0,d2q0, da,d2a  = Derivatives.share_parameter_second_derivatives(r_eq,alpha,d,theta,model=model)
+        # dlogq, d2logq = TestConditionalFunctions.conditional_parameter_second_derivatives(r_eq,alpha,d,theta,model=model)
         # Compute likelihood and probability weight gradients
         dll_i = dlogq[:,d.lender_obs] #+ dq0/(1-q0)
         # Compute likelihood and probability weight hessians
         d2ll_i = d2logq[:,:,d.lender_obs] #+ d2q0/(1-q0) + np.outer(dq0,dq0)/(1-q0)**2
-        dll_i = dll_i#*(1-sb)
-        d2ll_i = d2ll_i#*(1-sb)
+        # dll_i = dll_i#*(1-sb)
+        # d2ll_i = d2ll_i#*(1-sb)
         dq0 = dq0*(1-sb)
         d2q0 = d2q0*(1-sb)
         

@@ -48,9 +48,10 @@ import scipy as sp
 
 def pi_sell_diff(r,theta,d):
     diff_h = theta.psi*r + np.dot(d.W,theta.gamma_diff)
-    diff_exp = np.exp(diff_h/theta.sigma)
-    prob_h = diff_exp/(1 + diff_exp)
-    diff = theta.sigma*(np.log(1 + diff_exp) - np.log(2))
+    adj = np.minimum(0,-diff_h/theta.sigma)
+    diff_exp = np.exp(diff_h/theta.sigma + adj)
+    prob_h = diff_exp/(np.exp(adj) + diff_exp)
+    diff = theta.sigma*(np.log(np.exp(adj) + diff_exp) - np.log(2))
     return diff, prob_h
 
 ## Minimum Profitable Interest Rate from OTD lending
@@ -199,9 +200,9 @@ def expected_sale_profit(r,d,theta):
 
 def dSaleProfit_dr(r,d,theta):
 
-    min_rate = np.dot(d.W,theta.gamma_WH)
-    diff_min, prob_h_min = pi_sell_diff(min_rate,theta,d)
-    cost = min_rate + diff_min
+    cost = np.dot(d.W,theta.gamma_WH)
+    # diff_min, prob_h_min = pi_sell_diff(min_rate,theta,d)
+    # cost = min_rate + diff_min
 
     diff, prob_h = pi_sell_diff(r,theta,d)
     ExPi = r - cost + diff
@@ -209,15 +210,15 @@ def dSaleProfit_dr(r,d,theta):
     # Derivative of Hold Probability w.r.t. own interest rate
     dProb_h_dr = theta.psi*prob_h*(1-prob_h)/theta.sigma
 
-    dEPidr = 1 + prob_h*theta.psi + dProb_h_dr*(theta.psi*r)
+    dEPidr = 1 + prob_h*theta.psi
 
     return ExPi,dEPidr
 
 def d2SaleProfit_dr2(r,d,theta):
 
-    min_rate = np.dot(d.W,theta.gamma_WH)
-    diff_min, prob_h_min = pi_sell_diff(min_rate,theta,d)
-    cost = min_rate + diff_min
+    cost = np.dot(d.W,theta.gamma_WH)
+    # diff_min, prob_h_min = pi_sell_diff(min_rate,theta,d)
+    # cost = min_rate + diff_min
 
     diff, prob_h = pi_sell_diff(r,theta,d)
     ExPi = r - cost + diff
@@ -226,17 +227,17 @@ def d2SaleProfit_dr2(r,d,theta):
     d2Prob_h_dr2 = (theta.psi/theta.sigma)*dProb_h_dr*(1-2*prob_h)
 
     # Linearized to isolate alpha and q
-    dEPidr = 1 + prob_h*theta.psi + dProb_h_dr*(theta.psi*r)
-    d2EPidr2 = 2*dProb_h_dr*theta.psi +  d2Prob_h_dr2*(theta.psi*r)
+    dEPidr = 1 + prob_h*theta.psi 
+    d2EPidr2 = dProb_h_dr*theta.psi 
 
     return ExPi,dEPidr,d2EPidr2
 
 
 def d3SaleProfit_dr3(r,d,theta):
 
-    min_rate = np.dot(d.W,theta.gamma_WH)
-    diff_min, prob_h_min = pi_sell_diff(min_rate,theta,d)
-    cost = min_rate + diff_min
+    cost = np.dot(d.W,theta.gamma_WH)
+    # diff_min, prob_h_min = pi_sell_diff(min_rate,theta,d)
+    # cost = min_rate + diff_min
 
     diff, prob_h = pi_sell_diff(r,theta,d)
     ExPi = r - cost + diff
@@ -244,12 +245,12 @@ def d3SaleProfit_dr3(r,d,theta):
     # Derivative of Hold Probability w.r.t. own interest rate
     dProb_h_dr = theta.psi*prob_h*(1-prob_h)/theta.sigma
     d2Prob_h_dr2 = (theta.psi/theta.sigma)*dProb_h_dr*(1-2*prob_h)
-    d3Prob_h_dr3 = (theta.psi/theta.sigma)*(d2Prob_h_dr2*(1-2*prob_h) - 2*dProb_h_dr)
+    # d3Prob_h_dr3 = (theta.psi/theta.sigma)*(d2Prob_h_dr2*(1-2*prob_h) - 2*dProb_h_dr)
 
     # Linearized to isolate alpha and q
-    dEPidr = 1 + prob_h*theta.psi + dProb_h_dr*(theta.psi*r)
-    d2EPidr2 = 2*dProb_h_dr*theta.psi +  d2Prob_h_dr2*(theta.psi*r)
-    d2EPidr3 = 3*d2Prob_h_dr2*theta.psi +  d3Prob_h_dr3*(theta.psi*r)
+    dEPidr = 1 + prob_h*theta.psi 
+    d2EPidr2 = dProb_h_dr*theta.psi 
+    d2EPidr3 = d2Prob_h_dr2*theta.psi
 
     return ExPi,dEPidr,d2EPidr2,d2EPidr3
 
@@ -295,7 +296,7 @@ def expected_foc_nonlinear(r,alpha,d,theta,model="base"):
 
     # Deriviative of profit w.r.t. own rates
     # dEPidr = (dpi_dr)*q + (alpha*q*(1-q))*(pi)
-    dEPidr = (dpi_dr) + (alpha*(1-q))*(pi)
+    dEPidr = q*((dpi_dr) + (alpha*(1-q))*(pi))
  
     return dEPidr
 

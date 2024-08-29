@@ -179,7 +179,6 @@ class Parameters:
     def set(self,parameter_vector):
         self.beta_x = parameter_vector[self.beta_x_ind]
         self.gamma_WH = parameter_vector[self.gamma_WH_ind]
-        self.gamma_ZH = parameter_vector[self.gamma_ZH_ind]
 
     def set_demand(self,parameter_vector):
         self.beta_x = parameter_vector[self.beta_x_ind]

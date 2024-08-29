@@ -88,9 +88,10 @@ theta = Parameters(bank_dem_spec,cost_spec,
                    cost_diff,sigma,psi,gamma_WH,
                    share_data["3"],share_data["4"])
 
-theta.gamma_WH = gamma_WH
-theta.gamma_WS = gamma_WH + cost_diff
-
+theta.gamma_WH = np.linspace(0.01,0.04,7) #gamma_WH
+theta.gamma_WS = np.linspace(-0.01,0.01,7) #gamma_WH + cost_diff
+theta.gamma_diff = theta.gamma_WS - theta.gamma_WH 
+theta.psi = 0.2
 clist = consumer_object_list(theta,consumer_data,market_data)
 
 dat = clist[0]['dat']
@@ -98,6 +99,7 @@ dat = clist[0]['dat']
 consumer_likelihood_eval(theta,dat)
 
 test = np.zeros(len(theta.beta_x_ind))
+test = np.array([9.3,9.1, 8.9, 8.7,8.5])
 
 ll0 = evaluate_likelihood(test,theta,clist)
 
@@ -106,8 +108,21 @@ ll1, grad1 = evaluate_likelihood_gradient(test,theta,clist)
 print(grad1)
 
 
-ll2, grad2,hess2,bfgs = evaluate_likelihood_hessian(test,theta,clist)
-print(grad2)
+# ll2, grad2,hess2,bfgs = evaluate_likelihood_hessian(test,theta,clist)
+# print(grad2)
+
+
+
+
+
+t1 = deriv_test_likelihood(test,theta,clist)
+
+t2 = num_hessian_likelihood(test,theta,consumer_data,market_data,mbs_data)
+
+print(np.max(np.abs((grad1-t1)/t1)))
+print(np.max(np.abs((hess2-t2)/t2)))
+
+
 
 f_val, pre_start = estimate_NR(test,theta,consumer_data,market_data,parallel=True,num_workers=4)
 
@@ -193,11 +208,7 @@ print(grad1)
 
 ll2, grad2,hess2,bfgs = evaluate_likelihood_hessian(res,theta,consumer_data,market_data,mbs_data)
 print(grad2)
-t1 = deriv_test_likelihood(res,theta,clist)
-t2 = num_hessian_likelihood(res,theta,consumer_data,market_data,mbs_data)
 
-print(np.max(np.abs((grad1-t1)/t1)))
-print(np.max(np.abs((hess2-t2)/t2)))
 
 
 
@@ -483,20 +494,20 @@ test = np.array([31.26264496, 31.04771438, 30.7065461,  30.73619066, 31.11616083
 # 193, 247, 385, 524, 541
 error = np.zeros((consumer_data.shape[0],2))
 # for i in range(consumer_data.shape[0]):
-i = 799
+i =0
 # i = 204,  219,  310,  373,  468,  743,  773,  799, 1080, 1700, 1760,
 # test = np.copy(res)
 # test[0] = test[0] + 1e-6
-theta.set_demand(res)
-dat,mbs = consumer_subset(i,theta,consumer_data,market_data,mbs_data)
-ll_i, dll_i, q0, dq0,alpha, da, sb = consumer_likelihood_eval_gradient(theta,dat,mbs)
+theta.set_demand(test)
+dat = clist[i]['dat']
+ll_i, dll_i, q0, dq0,alpha, da, sb = consumer_likelihood_eval_gradient(theta,dat)
 # ll_i, dll_i, d2ll_i, q0, dq0, d2q0, alpha, da,d2a, sb,ab = consumer_likelihood_eval_hessian(theta,dat,mbs)
-g_test = deriv_test_cons_ll(res,theta,dat,mbs)
+g_test = deriv_test_cons_ll(np.zeros(len(test)),theta,dat)
 # h_test = hess_test_cons_ll(res,theta,dat,mbs)
   # error[i,0] = np.sum(np.abs(g_test- dll_i[0:6]))
 # error[i,1] = np.sum(np.abs(h_test- d2ll_i[0:6,0:6]))  
 np.sum(np.abs(g_test- dll_i[0:6]))
-print(g_test - dll_i[0:6])
+print(g_test - dll_i[0:5])
 # np.sum(np.abs(h_test- d2ll_i[0:6,0:6]))
 
 # test = np.copy(res)
@@ -505,17 +516,18 @@ print(g_test - dll_i[0:6])
 r0 = dat.r_obs
 j = dat.lender_obs
 d = dat
-m = mbs
-r_test = min_rate(d,theta,m) + 1/150
-alpha, r, itr, f = solve_eq_r_optim(r0,j,d,theta,m)
+r_test = min_rate(d,theta) + 1/150
+alpha, r, itr, f = solve_eq_r_optim(r0,j,d,theta)
 q =  market_shares(r,alpha,d,theta)
 print(alpha,r,1-sum(q))
-print(consumer_likelihood_eval(theta,d,m))
-print(ll_test_function(theta,d,m))
+print(consumer_likelihood_eval(theta,d))
+print(ll_test_function(theta,d))
 
-dlogq1, d2logq1, dq01,d2q01, da1,d2a1  =share_parameter_second_derivatives(r,alpha,d,theta,m)
+r, itr, flag = solve_eq_optim(-55.928766,d,theta)
+
+dlogq1, d2logq1, dq01,d2q01, da1,d2a1  =share_parameter_second_derivatives(r,alpha,d,theta)
 q0 = 1-np.sum(q)
-dlogq2, d2logq2, dq02,d2q02, da2,d2a2  =conditional_parameter_second_derivatives(r,alpha,d,theta,m)
+dlogq2, d2logq2, dq02,d2q02, da2,d2a2  =conditional_parameter_second_derivatives(r,alpha,d,theta)
 
 t1 = dlogq1[:,j] + dq01/(1-q0)
 t2 = dlogq2[:,j]
@@ -556,23 +568,43 @@ h_test
 # dll_i - dlogq[0:6,dat.lender_obs]
 
 
-solve_eq_r_optim(r0,j,dat,theta,mbs)
+solve_eq_r_optim(r0,j,dat,theta)
+
+
 
 r = r + 0.01
-t = deriv_test_foc(r,alpha,d,theta,m)
+t = deriv_test_foc(r,alpha,d,theta)
 np.diag(t)
-expected_foc_nonlinear(r,alpha,d,theta,m)
+expected_foc_nonlinear(r,alpha,d,theta)
 
-f,g,h = d2SaleProfit_dr2(r,d,theta,m)
+f,g,h = d2SaleProfit_dr2(r,d,theta)
 
-t0  = deriv_test_alpha_share(r,alpha,dat,theta,mbs)
-t1  = deriv_test_alpha(r,alpha,dat,theta,mbs)
-t2 = deriv_test_rate(r,alpha,dat,theta,mbs)
-t3 = deriv_test_beta_x(r,alpha,dat,theta,mbs)
-t4 = deriv_test_gamma(r,alpha,dat,theta,mbs)
 
-dalpha, dr, dbeta, dgamma = d_foc_all_parameters(r,alpha,dat,theta,mbs)
-dalpha1, dr1,foc = d_foc(r,alpha,dat,theta,mbs)
+
+
+
+i =1
+theta.set_demand(test)
+dat = clist[i]['dat']
+r0 = dat.r_obs
+j = dat.lender_obs
+d = dat
+# alpha = -100
+r, itr  = solve_eq(230,d,theta)
+
+alpha, r, itr, f = solve_eq_r_optim(r0,j,d,theta)
+solve_eq_r_robust(r0,j,d,theta)
+q =  market_shares(r,alpha,d,theta)
+
+
+t0  = deriv_test_alpha_share(r,alpha,dat,theta)
+t1  = deriv_test_alpha(r,alpha,dat,theta)
+t2 = deriv_test_rate(r,alpha,dat,theta)
+t3 = deriv_test_beta_x(r,alpha,dat,theta)
+t4 = deriv_test_gamma(r,alpha,dat,theta)
+
+dalpha, dr, dbeta, dgamma = d_foc_all_parameters(r,alpha,dat,theta)
+dalpha1, dr1,foc = d_foc(r,alpha,dat,theta)
 
 #### Test First Derivatives ####
 print(np.sum(np.abs(t1-dalpha)))
@@ -614,7 +646,7 @@ print(np.sum(np.abs((t6-drdbeta))))
 endo_grad = share_parameter_derivatives(r,alpha,dat,theta,mbs)
 
 grad1, hess1, d1, d2 = share_parameter_second_derivatives(r,alpha,dat,theta,mbs)
-t1 = deriv_test_endo(dat,theta,mbs)
+t1 = deriv_test_endo(dat,theta)
 # t2 = deriv2_test_endo(dat,theta,mbs)
 t3 = deriv_test_total_shares(dat,theta,mbs)
 t4 = deriv2_test_total_shares(dat,theta,mbs)

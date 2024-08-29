@@ -14,25 +14,27 @@ import EstimationFunctions
 def d_foc(r,alpha,d,theta,model="base"):
 
     # Profit and Derivative
-    if model=="base":
-        pi,dpi_dr,d2pi_dr2 = d2SaleProfit_dr2(r,d,theta)
+    # if model=="base":
+    pi,dpi_dr,d2pi_dr2 = d2SaleProfit_dr2(r,d,theta)
     # elif model=="hold":
     #     pi,dpi_dr,d2pi_dr2 = d2HoldOnly_dr2(r,d,theta)
 
     # Market Shares and Derivatives
     q =  market_shares(r,alpha,d,theta)
-    
+  
 
     ## Derivative of q w.r.t. alpha
     r_avg = sum(r*q)
     dqdalpha = q*(r-r_avg)
 
+    dEPidr = q*((dpi_dr) + pi*(alpha*(1-q)))
+    dEPidr_tilde = (dpi_dr) + pi*(alpha*(1-q))
+
 
     # Linearized to isolate alpha and q
-    dEPidr = (dpi_dr)/(alpha*(1-q)) + pi
-    dFOC_dalpha = ( -(dpi_dr)/(alpha*(1-q))**2 ) * ( 1-q-alpha*dqdalpha )
+    dFOC_dalpha =  q*pi*((1-q) - alpha*dqdalpha) + dqdalpha*dEPidr_tilde
 
-    # dEPidr = (dpi_dr) + pi*(alpha*(1-q))
+
     # dFOC_dalpha = pi*((1-q) - alpha*dqdalpha)
 
     # dEPidr = q*(dpi_dr + pi*(alpha*(1-q)) )
@@ -40,25 +42,13 @@ def d_foc(r,alpha,d,theta,model="base"):
 
     q_mat = np.tile(q,(len(q),1))
     q_mat_t = np.transpose(q_mat)
+    dqdr = -alpha*(q_mat*q_mat_t)
 
     ## Derivative of FOC_j w.r.t. r_k - Columns: FOC_j, Rows: r_k (der ) 
-    infra_mat = np.tile((dpi_dr),(len(q),1))
-    dFOC_dr = -(infra_mat/(1-q_mat)**2)*(q_mat*q_mat_t)
+    dFOC_dr = -q_mat*np.tile(pi,(len(q),1))*alpha*dqdr + dqdr*np.tile(dEPidr_tilde,(len(q),1))
 
-    diag_vals = (dpi_dr)*q/(1-q) + dpi_dr + d2pi_dr2/(alpha*(1-q))
+    diag_vals = q*(d2pi_dr2 + dpi_dr*(alpha*(1-q)) - pi*(alpha**2)*q*(1-q)) + alpha*q*(1-q)*dEPidr_tilde
     np.fill_diagonal(dFOC_dr,diag_vals) 
-
-    # dFOC_dr = np.tile(pi,(len(q),1))*(alpha**2)*(q_mat*q_mat_t)
-    # diag_vals = d2pi_dr2 + dpi_dr*(alpha*(1-q)) - pi*(alpha**2)*q*(1-q)
-    # np.fill_diagonal(dFOC_dr,diag_vals)
-
-
-    # dFOC_dr = q_mat*( np.tile(pi,(len(q),1))*(alpha**2)*(q_mat*q_mat_t)) +\
-    #       -alpha*q_mat*q_mat_t*(np.tile(dpi_dr,(len(q),1)) + np.tile(pi,(len(q),1))*alpha*(1-q_mat))
-
-    # diag_vals = q*( d2pi_dr2 + dpi_dr*(alpha*(1-q)) - pi*(alpha**2)*q*(1-q)) +\
-    #             alpha*q*(1-q)*(dpi_dr + pi*(alpha*(1-q)))
-    # np.fill_diagonal(dFOC_dr,diag_vals)
 
     return dFOC_dalpha, dFOC_dr, dEPidr
 
@@ -78,6 +68,7 @@ def d_foc_all_parameters(r,alpha,d,theta,model="base"):
 
     q_mat = np.tile(q,(len(q),1))
     q_mat_t = np.transpose(q_mat)
+    dqdr = -alpha*(q_mat*q_mat_t)
     
     ## Derivative of q w.r.t. alpha
     r_avg = sum(r*q)
@@ -88,10 +79,11 @@ def d_foc_all_parameters(r,alpha,d,theta,model="base"):
     dqdbeta_x = q_mat_x*(np.transpose(d.X) - np.transpose(np.tile(np.dot(np.transpose(d.X),q),(d.X.shape[0],1))) )
 
     # Linearized FOC to isolate alpha and q
-    # dEPidr = (dpi_dr) + pi*(alpha*(1-q))
+    dEPidr = q*((dpi_dr) + pi*(alpha*(1-q)))
+    dEPidr_tilde = (dpi_dr) + pi*(alpha*(1-q))
     
     ## Derivative of FOC w.r.t. Alpha
-    dFOC_dalpha = pi*((1-q) - alpha*dqdalpha)
+    dFOC_dalpha =  q*pi*((1-q) - alpha*dqdalpha) + dqdalpha*dEPidr_tilde
 
 
     ## Derivative of FOC w.r.t. beta_x - Columns: FOC_j, Rows: beta_xk
@@ -101,12 +93,18 @@ def d_foc_all_parameters(r,alpha,d,theta,model="base"):
 
     ## Derivative of FOC w.r.t. gamma - Columns: FOC_j, Rows: gamma_k
     # dFOC_dgamma = -np.transpose(np.concatenate((d.W,np.tile(d.Z,(5,1))),axis=1))
-    dFOC_dgamma = -np.transpose(d.W)*(np.tile(alpha*(1-q),(d.W.shape[1],1)))
+    dFOC_dgamma = -(np.transpose(d.W)*(np.tile(q*alpha*(1-q),(d.W.shape[1],1))))
+
+    # ## Derivative of FOC_j w.r.t. r_k - Columns: FOC_j, Rows: r_k (der ) 
+    # dFOC_dr = np.tile(pi,(len(q),1))*(alpha**2)*(q_mat*q_mat_t)
+
+    # diag_vals = d2pi_dr2 + dpi_dr*(alpha*(1-q)) - pi*(alpha**2)*q*(1-q)
+    # np.fill_diagonal(dFOC_dr,diag_vals) 
 
     ## Derivative of FOC_j w.r.t. r_k - Columns: FOC_j, Rows: r_k (der ) 
-    dFOC_dr = np.tile(pi,(len(q),1))*(alpha**2)*(q_mat*q_mat_t)
+    dFOC_dr = -q_mat*np.tile(pi,(len(q),1))*alpha*dqdr + dqdr*np.tile(dEPidr_tilde,(len(q),1))
 
-    diag_vals = d2pi_dr2 + dpi_dr*(alpha*(1-q)) - pi*(alpha**2)*q*(1-q)
+    diag_vals = q*(d2pi_dr2 + dpi_dr*(alpha*(1-q)) - pi*(alpha**2)*q*(1-q)) + alpha*q*(1-q)*dEPidr_tilde
     np.fill_diagonal(dFOC_dr,diag_vals) 
 
     return dFOC_dalpha, dFOC_dr, dFOC_dbeta_x, dFOC_dgamma

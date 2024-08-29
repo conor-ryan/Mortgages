@@ -263,8 +263,8 @@ def d3SaleProfit_dr3(r,d,theta):
 def expected_foc(r,alpha,d,theta,model="base"):
 
     # Profit from an origination 
-    if model=="base":
-        pi,dpi_dr = dSaleProfit_dr(r,d,theta)
+    # if model=="base":
+    pi,dpi_dr = dSaleProfit_dr(r,d,theta)
     # elif model=="hold":
     #     pi,dpi_dr = dHoldOnly_dr(r,d,theta)
 
@@ -286,8 +286,8 @@ def expected_foc(r,alpha,d,theta,model="base"):
 def expected_foc_nonlinear(r,alpha,d,theta,model="base"):
 
     # Profit from an origination 
-    if model=="base":
-        pi,dpi_dr = dSaleProfit_dr(r,d,theta)
+    # if model=="base":
+    pi,dpi_dr = dSaleProfit_dr(r,d,theta)
     # elif model=="hold":
     #     pi,dpi_dr = dHoldOnly_dr(r,d,theta)
 
@@ -295,10 +295,11 @@ def expected_foc_nonlinear(r,alpha,d,theta,model="base"):
     q = market_shares(r,alpha,d,theta)
 
     # Deriviative of profit w.r.t. own rates
-    # dEPidr = (dpi_dr)*q + (alpha*q*(1-q))*(pi)
-    dEPidr = q*((dpi_dr) + (alpha*(1-q))*(pi))
+    dEPidr = (dpi_dr)*q + (alpha*q*(1-q))*(pi)
+
  
     return dEPidr
+
 
 ## Approximate Marginal Cost - Useful for determining if parameters are feasible
 ## True, zero-profit interest rate doesn't have closed form solution

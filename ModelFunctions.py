@@ -6,60 +6,64 @@ import scipy as sp
 # r - interest rate
 # theta - parameter object
 # d - data object   
-def pi_hold(r,theta,d):
-    discount_rate = np.dot(np.transpose(d.D),theta.beta_d)
-    bank_cost = np.dot(d.W,theta.gamma_WH)
-    credit_cost = np.dot(np.transpose(d.Z),theta.gamma_ZH)
-    prof =  r/(discount_rate) - credit_cost - bank_cost
-    return prof 
+# def pi_hold(r,theta,d):
+#     cost = np.dot(d.W,theta.gamma_W)
+#     prof =  r - cost
+#     return prof 
 
-## Minimum Profitable Interest Rate from HTM lending
-## (Useful for characterizing expected marginal cost)
-# theta - parameter object
-# d - data object   
+# ## Minimum Profitable Interest Rate from HTM lending
+# ## (Useful for characterizing expected marginal cost)
+# # theta - parameter object
+# # d - data object   
 
-def r_hold_min(theta,d):
-    discount_rate = np.dot(np.transpose(d.D),theta.beta_d)
-    bank_cost = np.dot(d.W,theta.gamma_WH)
-    credit_cost = np.dot(np.transpose(d.Z),theta.gamma_ZH)
-    return (credit_cost + bank_cost)*discount_rate
+# def r_hold_min(theta,d):
+#     cost = np.dot(d.W,theta.gamma_W)
+#     return cost
 
-## Derivative of HTM profit w.r.t. Interest Rate
-# r - interest rate
-# theta - parameter object
-# d - data object   
-def dpidr_hold(r,theta,d):
-    discount_rate = np.dot(np.transpose(d.D),theta.beta_d)
-    return 1 /(discount_rate)
+# ## Derivative of HTM profit w.r.t. Interest Rate
+# # r - interest rate
+# # theta - parameter object
+# # d - data object   
+# def dpidr_hold(r,theta,d):
+#     return 1 
 
 ## Profit from selling mortgage
 # r - interest rate
 # theta - parameter object
 # d - data object   
 # m - MBS pricing function
-def pi_sell(r,theta,d,m):
-    bank_cost = np.dot(d.W,(theta.gamma_WH + theta.gamma_WS) ) # sum of HTM and OTD parameters
-    credit_cost = np.dot(np.transpose(d.Z),(theta.gamma_ZH + theta.gamma_ZS) ) # sum of HTM and OTD parameters
-    # Service fee revenue currently excluded (absorbed?)
-    return m.P(r - 0.0025) - credit_cost - bank_cost
+# def pi_sell(r,theta,d,m):
+#     bank_cost = np.dot(d.W,(theta.gamma_WH + theta.gamma_WS) ) # sum of HTM and OTD parameters
+#     cost = np.dot(np.transpose(d.Z),(theta.gamma_ZH + theta.gamma_ZS) ) # sum of HTM and OTD parameters
+#     # Service fee revenue currently excluded (absorbed?)
+#     return m.P(r - 0.0025) - credit_cost - bank_cost
 
 
 ## Derivative of OTD profit w.r.t. Interest Rate
 # r - interest rate
 # m - MBS pricing function (may change this when using MBS data)
-def dpidr_sell(r,m):
-    return m.dPdr(r - 0.0025)
+# def dpidr_sell(r,m):
+#     return m.dPdr(r - 0.0025)
+
+
+def pi_sell_diff(r,theta,d):
+    diff_h = theta.psi*r + np.dot(d.W,theta.gamma_diff)
+    adj = np.minimum(0,-diff_h/theta.sigma)
+    diff_exp = np.exp(diff_h/theta.sigma + adj)
+    prob_h = diff_exp/(np.exp(adj) + diff_exp)
+    diff = theta.sigma*(np.log(np.exp(adj) + diff_exp) - np.log(2))
+    return diff, prob_h
 
 ## Minimum Profitable Interest Rate from OTD lending
 ## (Useful for characterizing expected marginal cost)
 # theta - parameter object
 # d - data object   
 # m - MBS pricing function (may change this when using MBS data)
-def r_sell_min(theta,d,m):
-    bank_cost = np.dot(d.W,(theta.gamma_WH + theta.gamma_WS) ) # sum of HTM and OTD parameters
-    credit_cost = np.dot(np.transpose(d.Z),(theta.gamma_ZH + theta.gamma_ZS) ) # sum of HTM and OTD parameters
-    r_min = m.P_inv(credit_cost + bank_cost) +0.0025
-    return r_min
+# def r_sell_min(theta,d,m):
+#     bank_cost = np.dot(d.W,(theta.gamma_WH + theta.gamma_WS) ) # sum of HTM and OTD parameters
+#     credit_cost = np.dot(np.transpose(d.Z),(theta.gamma_ZH + theta.gamma_ZS) ) # sum of HTM and OTD parameters
+#     r_min = m.P_inv(credit_cost + bank_cost) +0.0025
+#     return r_min
 
 
 ###### DEMAND FUNCTIONS #####
@@ -71,7 +75,7 @@ def r_sell_min(theta,d,m):
 # theta - parameter object
 def market_shares(r,alpha,d,theta,return_bound=False):
     # Bounds tolerance on shares so log() doesn't crash
-    tol = 1e-15
+    tol = 1e-12
 
     # Utility Specification
     util = np.dot(d.X,theta.beta_x) + alpha*r
@@ -90,12 +94,12 @@ def market_shares(r,alpha,d,theta,return_bound=False):
         s = eu/(out + np.sum(eu))
         
         bound_flag = 0 
-        # if any(s<tol):
-        #     s = s*(1-tol) + tol*(sum(s)/len(s))
-        #     # bound_flag  = 1
-        # if ((1-sum(s))<tol):
-        #     s = (s/sum(s))*(1-tol) 
-        #     # bound_flag  = 1
+        if any(s<tol):
+            s = s*(1-tol) + tol*(sum(s)/len(s))
+            bound_flag  = 1
+        if ((1-sum(s))<tol):
+            s = (s/sum(s))*(1-tol) 
+            bound_flag  = 1
         if sum(s)<tol:
             s = np.repeat(tol/len(s),len(s))
             bound_flag  = 1
@@ -162,23 +166,29 @@ def share_derivative(r,alpha,d,theta):
 # theta - parameter object
 # m - MBS pricing function (may change this when using MBS data)
 
-def expected_sale_profit(r,d,theta,m):
+def expected_sale_profit(r,d,theta):
+    min_rate = np.dot(d.W,theta.gamma_WH)
+    diff_min, prob_h_min = pi_sell_diff(min_rate,theta,d)
+    cost = min_rate + diff_min
 
-    # Profit from an origination 
-    pi_h = pi_hold(r,theta,d) # HTM
-    pi_s = pi_sell(r,theta,d,m) # OTD
-    pi_max = np.maximum(pi_h,pi_s)
+    diff, prob_h = pi_sell_diff(r,theta,d)
+    ExPi = r - cost + diff
+
+    # # Profit from an origination 
+    # pi_h = pi_hold(r,theta,d) # HTM
+    # pi_s = pi_sell(r,theta,d,m) # OTD
+    # pi_max = np.maximum(pi_h,pi_s)
 
  
-    # Exponential of Expected Origination Profit (pre-computation)
-    epi_h = np.exp((pi_h-pi_max)/theta.sigma)
-    epi_s = np.exp((pi_s-pi_max)/theta.sigma)
+    # # Exponential of Expected Origination Profit (pre-computation)
+    # epi_h = np.exp((pi_h-pi_max)/theta.sigma)
+    # epi_s = np.exp((pi_s-pi_max)/theta.sigma)
 
-    # Probability of Hold vs Sell
-    prob_h = epi_h/(epi_h+epi_s)
-    prob_s = 1 - prob_h
-    # Profit expectation over future balance sheet shock
-    ExPi = prob_h*pi_h + prob_s*pi_s
+    # # Probability of Hold vs Sell
+    # prob_h = epi_h/(epi_h+epi_s)
+    # prob_s = 1 - prob_h
+    # # Profit expectation over future balance sheet shock
+    # ExPi = prob_h*pi_h + prob_s*pi_s
 
     # Currently, epsilon shock value isn't included in profitability
     # This matters for infra-marginal earnings, not exactly sure what is correct
@@ -188,114 +198,61 @@ def expected_sale_profit(r,d,theta,m):
     return ExPi
 
 
-def dSaleProfit_dr(r,d,theta,m):
+def dSaleProfit_dr(r,d,theta):
 
-    # Profit from an origination 
-    pi_h = pi_hold(r,theta,d) # HTM
-    pi_s = pi_sell(r,theta,d,m) # OTD
-    pi_max = np.maximum(pi_h,pi_s)
+    cost = np.dot(d.W,theta.gamma_WH)
+    # diff_min, prob_h_min = pi_sell_diff(min_rate,theta,d)
+    # cost = min_rate + diff_min
 
-    # Derivative of origination profit
-    dpi_h = dpidr_hold(r,theta,d) #HTM
-    dpi_s = dpidr_sell(r,m) #OTD
-
-
-    # Exponential of Expected Origination Profit (pre-computation)
-    epi_h = np.exp((pi_h-pi_max)/theta.sigma)
-    epi_s = np.exp((pi_s-pi_max)/theta.sigma)
-
-    # Probability of Hold vs Sell
-    prob_h = epi_h/(epi_h+epi_s)
-    prob_s = 1 - prob_h
+    diff, prob_h = pi_sell_diff(r,theta,d)
+    ExPi = r - cost + diff
 
     # Derivative of Hold Probability w.r.t. own interest rate
-    dProb_h_dr = (dpi_h - dpi_s)*prob_h*prob_s/theta.sigma
-    dProb_s_dr = - dProb_h_dr
+    dProb_h_dr = theta.psi*prob_h*(1-prob_h)/theta.sigma
 
-    # Linearized to isolate alpha and q
-    ExPi = prob_h*pi_h + prob_s*pi_s
-    dEPidr = prob_h*dpi_h+prob_s*dpi_s + dProb_h_dr*(pi_h-pi_s)
+    dEPidr = 1 + prob_h*theta.psi
 
     return ExPi,dEPidr
 
-def d2SaleProfit_dr2(r,d,theta,m):
+def d2SaleProfit_dr2(r,d,theta):
 
-    # Profit from an origination 
-    pi_h = pi_hold(r,theta,d) # HTM
-    pi_s = pi_sell(r,theta,d,m) # OTD
-    pi_max = np.maximum(pi_h,pi_s)
+    cost = np.dot(d.W,theta.gamma_WH)
+    # diff_min, prob_h_min = pi_sell_diff(min_rate,theta,d)
+    # cost = min_rate + diff_min
 
-    # Derivative of origination profit
-    dpi_h = dpidr_hold(r,theta,d) #HTM
-    dpi_s = dpidr_sell(r,m) #OTD
+    diff, prob_h = pi_sell_diff(r,theta,d)
+    ExPi = r - cost + diff
 
-    d2pi_h = 0
-    d2pi_s  = m.d2Pdr2(r)
-
-    # Exponential of Expected Origination Profit (pre-computation)
-    epi_h = np.exp((pi_h-pi_max)/theta.sigma)
-    epi_s = np.exp((pi_s-pi_max)/theta.sigma)
-
-    # Probability of Hold vs Sell
-    prob_h = epi_h/(epi_h+epi_s)
-    prob_s = 1 - prob_h
-
-    # Derivative of Hold Probability w.r.t. own interest rate
-    dProb_h_dr = (dpi_h - dpi_s)*prob_h*prob_s/theta.sigma
-    dProb_s_dr = - dProb_h_dr
-
-    d2Prob_h_dr2 = ((dpi_h - dpi_s)*(prob_h*dProb_s_dr + prob_s*dProb_h_dr)-d2pi_s*prob_h*prob_s)/theta.sigma
+    dProb_h_dr = theta.psi*prob_h*(1-prob_h)/theta.sigma
+    d2Prob_h_dr2 = (theta.psi/theta.sigma)*dProb_h_dr*(1-2*prob_h)
 
     # Linearized to isolate alpha and q
-    ExPi = prob_h*pi_h + prob_s*pi_s
-    dEPidr = prob_h*dpi_h+prob_s*dpi_s + dProb_h_dr*(pi_h-pi_s)
-    d2EPidr2 = prob_h*d2pi_h+prob_s*d2pi_s + 2*dProb_h_dr*(dpi_h-dpi_s) + d2Prob_h_dr2*(pi_h-pi_s)
+    dEPidr = 1 + prob_h*theta.psi 
+    d2EPidr2 = dProb_h_dr*theta.psi 
 
     return ExPi,dEPidr,d2EPidr2
 
 
-def d3SaleProfit_dr3(r,d,theta,m):
+def d3SaleProfit_dr3(r,d,theta):
 
-    # Profit from an origination 
-    pi_h = pi_hold(r,theta,d) # HTM
-    pi_s = pi_sell(r,theta,d,m) # OTD
-    pi_max = np.maximum(pi_h,pi_s)
+    cost = np.dot(d.W,theta.gamma_WH)
+    # diff_min, prob_h_min = pi_sell_diff(min_rate,theta,d)
+    # cost = min_rate + diff_min
 
-    # Derivative of origination profit
-    dpi_h = dpidr_hold(r,theta,d) #HTM
-    dpi_s = dpidr_sell(r,m) #OTD
-
-    d2pi_h = 0
-    d2pi_s = m.d2Pdr2(r)
-
-    d3pi_s = m.d3Pdr3(r)
-    d3pi_h = 0
-
-    # Exponential of Expected Origination Profit (pre-computation)
-    epi_h = np.exp((pi_h-pi_max)/theta.sigma)
-    epi_s = np.exp((pi_s-pi_max)/theta.sigma)
-
-    # Probability of Hold vs Sell
-    prob_h = epi_h/(epi_h+epi_s)
-    prob_s = 1 - prob_h
+    diff, prob_h = pi_sell_diff(r,theta,d)
+    ExPi = r - cost + diff
 
     # Derivative of Hold Probability w.r.t. own interest rate
-    dProb_h_dr = (dpi_h - dpi_s)*prob_h*prob_s/theta.sigma
-    dProb_s_dr = - dProb_h_dr
-
-    d2Prob_h_dr2 = ((dpi_h - dpi_s)*(prob_s-prob_h)*dProb_h_dr-d2pi_s*prob_h*prob_s)/theta.sigma
-    d3Prob_h_dr3 = (2*(d2pi_h - d2pi_s)*(prob_s-prob_h)*dProb_h_dr +
-                    (dpi_h - dpi_s)*(prob_s-prob_h)*d2Prob_h_dr2 +
-                    (dpi_h - dpi_s)*(2*dProb_s_dr)*dProb_h_dr + 
-                    -d3pi_s*prob_h*prob_s)/theta.sigma
+    dProb_h_dr = theta.psi*prob_h*(1-prob_h)/theta.sigma
+    d2Prob_h_dr2 = (theta.psi/theta.sigma)*dProb_h_dr*(1-2*prob_h)
+    # d3Prob_h_dr3 = (theta.psi/theta.sigma)*(d2Prob_h_dr2*(1-2*prob_h) - 2*dProb_h_dr)
 
     # Linearized to isolate alpha and q
-    pi = prob_h*pi_h + prob_s*pi_s
-    dpidr = prob_h*dpi_h+prob_s*dpi_s + dProb_h_dr*(pi_h-pi_s)
-    d2pidr2 = prob_h*d2pi_h+prob_s*d2pi_s + 2*dProb_h_dr*(dpi_h-dpi_s) + d2Prob_h_dr2*(pi_h-pi_s)
-    d3pidr3 = prob_h*d3pi_h+prob_s*d3pi_s + 3*d2Prob_h_dr2*(dpi_h-dpi_s) + 3*dProb_h_dr*(d2pi_h-d2pi_s) + d3Prob_h_dr3*(pi_h-pi_s)
+    dEPidr = 1 + prob_h*theta.psi 
+    d2EPidr2 = dProb_h_dr*theta.psi 
+    d2EPidr3 = d2Prob_h_dr2*theta.psi
 
-    return pi,dpidr,d2pidr2,d3pidr3
+    return ExPi,dEPidr,d2EPidr2,d2EPidr3
 
 ## First Order Condition - Maximization condition for expected profit
 # r - interest rate vector
@@ -303,13 +260,13 @@ def d3SaleProfit_dr3(r,d,theta,m):
 # d - data object
 # theta - parameter object
 # m - MBS pricing function (may change this when using MBS data)
-def expected_foc(r,alpha,d,theta,m,model="base"):
+def expected_foc(r,alpha,d,theta,model="base"):
 
     # Profit from an origination 
     if model=="base":
-        pi,dpi_dr = dSaleProfit_dr(r,d,theta,m)
-    elif model=="hold":
-        pi,dpi_dr = dHoldOnly_dr(r,d,theta)
+        pi,dpi_dr = dSaleProfit_dr(r,d,theta)
+    # elif model=="hold":
+    #     pi,dpi_dr = dHoldOnly_dr(r,d,theta)
 
     # Market Shares and Derivatives
     q = market_shares(r,alpha,d,theta)
@@ -326,20 +283,20 @@ def expected_foc(r,alpha,d,theta,m,model="base"):
 # d - data object
 # theta - parameter object
 # m - MBS pricing function (may change this when using MBS data)
-def expected_foc_nonlinear(r,alpha,d,theta,m,model="base"):
+def expected_foc_nonlinear(r,alpha,d,theta,model="base"):
 
     # Profit from an origination 
     if model=="base":
-        pi,dpi_dr = dSaleProfit_dr(r,d,theta,m)
-    elif model=="hold":
-        pi,dpi_dr = dHoldOnly_dr(r,d,theta)
+        pi,dpi_dr = dSaleProfit_dr(r,d,theta)
+    # elif model=="hold":
+    #     pi,dpi_dr = dHoldOnly_dr(r,d,theta)
 
     # Market Shares and Derivatives
     q = market_shares(r,alpha,d,theta)
 
     # Deriviative of profit w.r.t. own rates
-    dEPidr = (dpi_dr)*q + (alpha*q*(1-q))*(pi)
-
+    # dEPidr = (dpi_dr)*q + (alpha*q*(1-q))*(pi)
+    dEPidr = q*((dpi_dr) + (alpha*(1-q))*(pi))
  
     return dEPidr
 
@@ -348,9 +305,9 @@ def expected_foc_nonlinear(r,alpha,d,theta,m,model="base"):
 # d - data object
 # theta - parameter object
 # m - MBS pricing function 
-def approx_mc(d,theta,m):
+def approx_mc(d,theta):
     # Minimum Interest Rates
-    r_h_min = r_hold_min(theta,d)
+    r_h_min = np.dot(d.W,theta.gamma_WH)
     # r_s_min = r_sell_min(theta,d,m)
 
     # mc = np.minimum(r_h_min,r_s_min)
@@ -362,12 +319,12 @@ def approx_mc(d,theta,m):
 # d - data object
 # theta - parameter object
 # m - MBS pricing function 
-def min_rate(d,theta,m,model="base"):
-    def obj_fun(x):
-        return target_markup(x,0.0,d,theta,m,model=model)
+def min_rate(d,theta,model="base"):
+    # def obj_fun(x):
+    #     return target_markup(x,0.0,d,theta,m,model=model)
     
-    res = sp.optimize.root(obj_fun,np.repeat(d.r_obs,d.X.shape[0]))
-    return res.x
+    # res = sp.optimize.root(obj_fun,np.repeat(d.r_obs,d.X.shape[0]))
+    return np.dot(d.W,theta.gamma_WH)
 
 
 ## Hold Only First Order Condition - Maximization with no OTD option
@@ -376,75 +333,71 @@ def min_rate(d,theta,m,model="base"):
 # d - data object
 # theta - parameter object
 
-def hold_only_foc(r,alpha,d,theta,):
+# def hold_only_foc(r,alpha,d,theta,):
 
-    # Profit from an origination 
-    pi_h = pi_hold(r,theta,d) # HTM
+#     # Profit from an origination 
+#     pi_h = pi_hold(r,theta,d) # HTM
 
-    # Derivative of origination profit
-    dpi_h = dpidr_hold(r,theta,d) #HTM
+#     # Derivative of origination profit
+#     dpi_h = dpidr_hold(r,theta,d) #HTM
 
-    # Market Shares and Derivatives
-    q,dqdp = share_derivative(r,alpha,d,theta)
+#     # Market Shares and Derivatives
+#     q,dqdp = share_derivative(r,alpha,d,theta)
 
-    dPidr = dqdp*pi_h + q*dpi_h
+#     dPidr = dqdp*pi_h + q*dpi_h
  
-    return dPidr
+#     return dPidr
 
 
-## Balance Sheet Allocation - decision to sell or hold a particular mortgage
+# Balance Sheet Allocation - decision to sell or hold a particular mortgage
 # r - interest rate vector
 # d - data object
 # theta - parameter object
 # m - MBS pricing function (may change this when using MBS data)
-def balance_sheet_alloc(r,d,theta,m):
-    # Profit from each origination method
-    pi_h = pi_hold(r,theta,d) # HTM
-    pi_s = pi_sell(r,theta,d,m) # OTD
+def balance_sheet_alloc(r,d,theta):
 
-    # Logit Binary Probability Function 
-    sell = np.exp(pi_s/theta.sigma)/(np.exp(pi_h/theta.sigma) + np.exp(pi_s/theta.sigma))
-    return sell
+    diff_h = theta.psi*r + np.dot(d.W,theta.gamma_diff)
+    diff_exp = np.exp(diff_h/theta.sigma)
+    prob_h = diff_exp/(1 + diff_exp)
 
-
-def target_markup(r,target,d,theta,m,model="base"):
-    if model=="base":
-        val = expected_sale_profit(r,d,theta,m) - target
-    elif model=="hold":
-        val = pi_hold(r,theta,d)- target
-    return val
+    return 1-prob_h
 
 
+# def target_markup(r,target,d,theta,m,model="base"):
+#     if model=="base":
+#         val = expected_sale_profit(r,d,theta,m) - target
+#     elif model=="hold":
+#         val = pi_hold(r,theta,d)- target
+#     return val
 
+# ######## Hold Only Profit Functions #######
+# def dHoldOnly_dr(r,d,theta):
 
-######## Hold Only Profit Functions #######
-def dHoldOnly_dr(r,d,theta):
+#     # Profit from an origination 
+#     pi_h = pi_hold(r,theta,d) # HTM
 
-    # Profit from an origination 
-    pi_h = pi_hold(r,theta,d) # HTM
+#     # Derivative of origination profit
+#     dpi_h = dpidr_hold(r,theta,d) #HTM
 
-    # Derivative of origination profit
-    dpi_h = dpidr_hold(r,theta,d) #HTM
+#     return pi_h,np.repeat(dpi_h,len(pi_h))
 
-    return pi_h,np.repeat(dpi_h,len(pi_h))
+# def d2HoldOnly_dr2(r,d,theta):
 
-def d2HoldOnly_dr2(r,d,theta):
+#     # Profit from an origination 
+#     pi_h = pi_hold(r,theta,d) # HTM
 
-    # Profit from an origination 
-    pi_h = pi_hold(r,theta,d) # HTM
-
-    # Derivative of origination profit
-    dpi_h = dpidr_hold(r,theta,d) #HTM
+#     # Derivative of origination profit
+#     dpi_h = dpidr_hold(r,theta,d) #HTM
     
-    return pi_h,np.repeat(dpi_h,len(pi_h)),np.repeat(0,len(pi_h))
+#     return pi_h,np.repeat(dpi_h,len(pi_h)),np.repeat(0,len(pi_h))
 
 
-def d3HoldOnly_dr3(r,d,theta):
+# def d3HoldOnly_dr3(r,d,theta):
 
-        # Profit from an origination 
-    pi_h = pi_hold(r,theta,d) # HTM
+#         # Profit from an origination 
+#     pi_h = pi_hold(r,theta,d) # HTM
 
-    # Derivative of origination profit
-    dpi_h = dpidr_hold(r,theta,d) #HTM
+#     # Derivative of origination profit
+#     dpi_h = dpidr_hold(r,theta,d) #HTM
     
-    return pi_h,np.repeat(dpi_h,len(pi_h)),np.repeat(0,len(pi_h)),np.repeat(0,len(pi_h))
+#     return pi_h,np.repeat(dpi_h,len(pi_h)),np.repeat(0,len(pi_h)),np.repeat(0,len(pi_h))
